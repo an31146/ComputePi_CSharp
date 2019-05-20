@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.15
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComputePi_CSharp", "ComputePi_CSharp.csproj", "{F90460EA-1332-4EF3-991D-3C6AFDE06B73}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntegerPi", "..\..\..\IntegerPi\IntegerPi.csproj", "{14E0D338-800E-416C-BD34-9D3190F3BE76}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DirichletSeries", "DirichletSeries\DirichletSeries.csproj", "{D3DEF494-0D31-4986-A5E0-261BB3508263}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParallelForLoop", "..\..\ParallelForLoop\ParallelForLoop.csproj", "{F0E2E4FB-323E-4036-8AB5-95D0EC4F0B5C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F90460EA-1332-4EF3-991D-3C6AFDE06B73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F90460EA-1332-4EF3-991D-3C6AFDE06B73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F90460EA-1332-4EF3-991D-3C6AFDE06B73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F90460EA-1332-4EF3-991D-3C6AFDE06B73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14E0D338-800E-416C-BD34-9D3190F3BE76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14E0D338-800E-416C-BD34-9D3190F3BE76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14E0D338-800E-416C-BD34-9D3190F3BE76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14E0D338-800E-416C-BD34-9D3190F3BE76}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3DEF494-0D31-4986-A5E0-261BB3508263}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3DEF494-0D31-4986-A5E0-261BB3508263}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3DEF494-0D31-4986-A5E0-261BB3508263}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3DEF494-0D31-4986-A5E0-261BB3508263}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0E2E4FB-323E-4036-8AB5-95D0EC4F0B5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0E2E4FB-323E-4036-8AB5-95D0EC4F0B5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0E2E4FB-323E-4036-8AB5-95D0EC4F0B5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0E2E4FB-323E-4036-8AB5-95D0EC4F0B5C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D302943D-30B7-4299-964A-3388629BBA1E}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+EndGlobal
