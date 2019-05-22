@@ -16,7 +16,7 @@ namespace ComputePi
 {
     class Program
     {
-        const int num_steps = 1000000000;
+        const int num_steps = 2000000000;
 
         /// <summary>Main method to time various implementations of computing PI.</summary>
         static void Main(string[] args)
@@ -39,6 +39,7 @@ namespace ComputePi
         {
             var sw = Stopwatch.StartNew();
             var result = work();
+            sw.Stop();
             Console.WriteLine("--- {0} ---", strFuncName);
             Console.WriteLine(sw.Elapsed + ": " + result + "\n");
         }
