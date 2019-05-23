@@ -5,12 +5,13 @@ using System.Threading.Tasks;
 
 using static System.Console;
 
-#pragma warning disable IDE1006,IDE0049,CS0168,IDE0039
+#pragma warning disable IDE1006,IDE0049,CS0168,IDE0039,CS0219
 /*
  * IDE1006 Suppress Naming Rule Violation IDE1006
  * IDE0049 Name Can Be Simplified
- * CS0168  The variable 'var' is declared but never used.
  * IDE0039 Use local function
+ * CS0168  The variable 'var' is declared but never used.
+ * CS0219  The variable 'b' is assigned but its value is never used
  */
 
 namespace IntegerPi
