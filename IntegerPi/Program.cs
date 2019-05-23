@@ -10,12 +10,13 @@ using static System.Console;
 // IDE0049 Name Can Be Simplified
 // CS0168  The variable 'var' is declared but never used.
 // IDE0039 Use local function
+
 namespace IntegerPi
 {
     class Program
     {
-        const uint STEPS = 20000000;
-        const uint DIGITS = 500;
+        const uint STEPS = 80000000;
+        const uint DIGITS = 150;
 
         public static BigInteger SquareRoot(BigInteger n)
         {
@@ -279,11 +280,19 @@ namespace IntegerPi
                 throw new ArgumentNullException(nameof(work));
             }
 
-            var sw = Stopwatch.StartNew();
-            var result = work();
+            Stopwatch sw = Stopwatch.StartNew();
+                T result = work();
             sw.Stop();
+
             Write("--- {0} ---\t", strFuncName);
-            WriteLine("{0} ms\n", sw.ElapsedMilliseconds);
+            string strElapsed;
+            if (sw.ElapsedMilliseconds <= 1000)
+                strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
+            else
+                strElapsed = String.Format("{0:F1} s", (float)sw.Elapsed.Milliseconds / 1000);
+            //WriteLine("{0} ms\n", sw.ElapsedMilliseconds);
+            WriteLine(strElapsed);
+
             return result;
         }
 
