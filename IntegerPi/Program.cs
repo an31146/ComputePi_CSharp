@@ -353,14 +353,14 @@ namespace IntegerPi
 #if DEBUG
             double pi_squared_over_six = pf.zeta_of_two_double();
 #else
-            double pi_squared_over_six = pf.TimeThis("zeta_of_two_double()", () => zeta_of_two_double());
+            double pi_squared_over_six = pf.TimeThis("zeta_of_two_double()", () => pf.zeta_of_two_double());
 #endif
             WriteLine("pi²/6: {0}\n\n√(pi²/6): {1}\n\n", pi_squared_over_six, Math.Sqrt(pi_squared_over_six * 6.0d));
 
 #if DEBUG
             double pi_to_the_fourth_over_ninety = pf.zeta_of_four_double();
 #else
-            double pi_to_the_fourth_over_ninety = pf.TimeThis("zeta_of_four_double()", () => zeta_of_four_double());
+            double pi_to_the_fourth_over_ninety = pf.TimeThis("zeta_of_four_double()", () => pf.zeta_of_four_double());
 #endif
             WriteLine("pi⁴/90: {0}\n\n(pi⁴/90)^¼: {1}\n\n", pi_to_the_fourth_over_ninety, Math.Pow(pi_to_the_fourth_over_ninety * 90.0d, 0.25d));
 
