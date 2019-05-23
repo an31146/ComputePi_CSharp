@@ -16,15 +16,33 @@ using static System.Console;
 
 namespace IntegerPi
 {
-    class Program
+    class PiFunctions
     {
-        const uint STEPS = 80000000;
-        const uint DIGITS = 150;
+        uint m_STEPS;
+        uint m_DIGITS;
 
-        public static BigInteger SquareRoot(BigInteger n)
+        public uint STEPS
+        {
+            get { return m_STEPS; }
+            set { m_STEPS = value; }
+        }
+
+        public uint DIGITS
+        {
+            get { return m_DIGITS; }
+            set { m_DIGITS = value; }
+        }
+
+        public PiFunctions()
+        {
+            m_STEPS = 20000000;
+            m_DIGITS = 100;
+        }
+
+        public BigInteger SquareRoot(BigInteger n)
         {
             BigInteger div = n >> 1, _div, quotient, _doubleOfQuotient, _remainder;
-            bool bBreakExpr = false; 
+            bool bBreakExpr = false;
             Stopwatch sw = new Stopwatch();
 
             //Newton's Method
@@ -57,7 +75,7 @@ namespace IntegerPi
             return quotient;
         }   // SquareRoot
 
-        public static BigInteger Sqrt(BigInteger x)
+        public BigInteger Sqrt(BigInteger x)
         {
             BigInteger div = BigInteger.One;
             div = BigInteger.Add(div, BigInteger.One);
@@ -90,12 +108,12 @@ namespace IntegerPi
             return y;
         }   // Sqrt
 
-        public static BigInteger SquareRootFloor(BigInteger x)
+        public BigInteger SquareRootFloor(BigInteger x)
         {
             if (x.CompareTo(BigInteger.Zero) < 0) {
                 throw new ArgumentException("Negative argument.");
             }
-            
+
             // square roots of 0 and 1 are trivial and
             // y == 0 will cause a divide-by-zero exception
             if (x.Equals(BigInteger.Zero) || x.Equals(BigInteger.One)) {
@@ -110,7 +128,7 @@ namespace IntegerPi
             sw.Start();
             for (y = BigInteger.Divide(x, TWO);
                  y.CompareTo(BigInteger.Divide(x, y)) > 0;
-                 y = BigInteger.Divide(BigInteger.Add(BigInteger.Divide(x, y), y), TWO));
+                 y = BigInteger.Divide(BigInteger.Add(BigInteger.Divide(x, y), y), TWO)) ;
             sw.Stop();
 #if DEBUG
             string strElapsed;
@@ -124,12 +142,12 @@ namespace IntegerPi
             return y;
         }   // SquareRootFloor
 
-        public static BigInteger SquareRootCeil(BigInteger x)
+        public BigInteger SquareRootCeil(BigInteger x)
         {
             if (x.CompareTo(BigInteger.Zero) < 0) {
                 throw new ArgumentException("Negative argument.");
             }
-            
+
             // square roots of 0 and 1 are trivial and
             // y == 0 will cause a divide-by-zero exception
             if (x == BigInteger.Zero || x == BigInteger.One) {
@@ -144,7 +162,7 @@ namespace IntegerPi
             sw.Start();
             for (y = BigInteger.Divide(x, TWO);
                  y.CompareTo(BigInteger.Divide(x, y)) > 0;
-                 y = BigInteger.Divide(BigInteger.Add(BigInteger.Divide(x, y), y), TWO));
+                 y = BigInteger.Divide(BigInteger.Add(BigInteger.Divide(x, y), y), TWO)) ;
             sw.Stop();
 #if DEBUG
             string strElapsed;
@@ -166,7 +184,7 @@ namespace IntegerPi
             }
         }   // SquareRootCeil
 
-        static double zeta_of_two_double()
+        public double zeta_of_two_double()
         {
             double sum, term;
             const double unity = 1.0;
@@ -191,7 +209,7 @@ namespace IntegerPi
             return sum;
         }
 
-        static double zeta_of_four_double()
+        public double zeta_of_four_double()
         {
             double sum;
             const double unity = 1.0;
@@ -208,12 +226,12 @@ namespace IntegerPi
                 //Write("{0} \r", local.ToString("F18", CultureInfo.InvariantCulture));
                 return (local);
             }, local => {
-                            lock (monitor) { sum += local; }
-                        });
+                lock (monitor) { sum += local; }
+            });
             return sum;
         }
 
-        static BigInteger normalize(uint n, uint digits)
+        public BigInteger normalize(uint n, uint digits)
         {
             BigInteger ret_val = new BigInteger(n);
             BigInteger exponent = 10;
@@ -232,7 +250,7 @@ namespace IntegerPi
             return ret_val;
         }
 
-        static BigInteger zeta_of_two_bigint()
+        public BigInteger zeta_of_two_bigint()
         {
             BigInteger unity = normalize(1, DIGITS);
             BigInteger exponent = unity;
@@ -276,7 +294,7 @@ namespace IntegerPi
         }
 
         /// <summary>Times the execution of a function and outputs both the elapsed time and the function's result.</summary>
-        static dynamic TimeThis<T>(String strFuncName, Func<T> work)
+        public dynamic TimeThis<T>(String strFuncName, Func<T> work)
         {
             if (work == null)
             {
@@ -284,7 +302,7 @@ namespace IntegerPi
             }
 
             Stopwatch sw = Stopwatch.StartNew();
-                T result = work();
+            T result = work();
             sw.Stop();
 
             Write("--- {0} ---\t", strFuncName);
@@ -299,7 +317,7 @@ namespace IntegerPi
             return result;
         }
 
-        static dynamic TimeThis<T, BigInteger>(String strFuncName, Func<T, BigInteger> work)
+        public dynamic TimeThis<T, BigInteger>(String strFuncName, Func<T, BigInteger> work)
         {
             if (work == null)
             {
@@ -315,46 +333,59 @@ namespace IntegerPi
             WriteLine("{0} ms\n", sw.ElapsedMilliseconds);
             return result;
         }
+    }   // class PiFunctions
 
+    class Program
+    { 
         static void Main(string[] args)
         {
+            PiFunctions pf = new PiFunctions();
+
+            if (args.Length >= 1)
+            {
+                pf.STEPS = UInt32.Parse(args[0]);
+            }
+            if (args.Length == 2)
+            {
+                pf.DIGITS = UInt32.Parse(args[1]);
+            }
+
 #if DEBUG
-            double pi_squared_over_six = zeta_of_two_double();
+            double pi_squared_over_six = pf.zeta_of_two_double();
 #else
-            double pi_squared_over_six = TimeThis("zeta_of_two_double()", () => zeta_of_two_double());
+            double pi_squared_over_six = pf.TimeThis("zeta_of_two_double()", () => zeta_of_two_double());
 #endif
             WriteLine("pi²/6: {0}\n\n√(pi²/6): {1}\n\n", pi_squared_over_six, Math.Sqrt(pi_squared_over_six * 6.0d));
 
 #if DEBUG
-            double pi_to_the_fourth_over_ninety = zeta_of_four_double();
+            double pi_to_the_fourth_over_ninety = pf.zeta_of_four_double();
 #else
-            double pi_to_the_fourth_over_ninety = TimeThis("zeta_of_four_double()", () => zeta_of_four_double());
+            double pi_to_the_fourth_over_ninety = pf.TimeThis("zeta_of_four_double()", () => zeta_of_four_double());
 #endif
             WriteLine("pi⁴/90: {0}\n\n(pi⁴/90)^¼: {1}\n\n", pi_to_the_fourth_over_ninety, Math.Pow(pi_to_the_fourth_over_ninety * 90.0d, 0.25d));
 
-
-            BigInteger TWO = normalize(2, DIGITS);
-
+            BigInteger TWO = pf.normalize(2, pf.DIGITS);
 #if DEBUG
-            WriteLine("SquareRoot({0}) =\n{1}\n", TWO, SquareRoot(TWO));
-            WriteLine("Sqrt({0}) =\n{1}\n", TWO, Sqrt(TWO));
-            WriteLine("SquareRootFloor({0}) =\n{1}\n", TWO, SquareRootFloor(TWO));
-            WriteLine("SquareRootCeil({0}) =\n{1}\n", TWO, SquareRootCeil(TWO));
+            WriteLine("SquareRoot({0}) =\n{1}\n", TWO, pf.SquareRoot(TWO));
+            WriteLine("Sqrt({0}) =\n{1}\n", TWO, pf.Sqrt(TWO));
+            WriteLine("SquareRootFloor({0}) =\n{1}\n", TWO, pf.SquareRootFloor(TWO));
+            WriteLine("SquareRootCeil({0}) =\n{1}\n", TWO, pf.SquareRootCeil(TWO));
 
-            BigInteger BigInt_pi_squared_over_six = zeta_of_two_bigint();
+            BigInteger BigInt_pi_squared_over_six = pf.zeta_of_two_bigint();
+            BigInteger BigInt_pi = pf.SquareRoot(BigInt_pi_squared_over_six * 6);
 #else
-            WriteLine("SquareRoot({0}) =\n{1}\n", TWO, TimeThis("SquareRoot(TWO)", () => SquareRoot(TWO)));
-            WriteLine("Sqrt({0}) =\n{1}\n", TWO, TimeThis("Sqrt(TWO)", () => Sqrt(TWO)));
-            WriteLine("SquareRootFloor({0}) =\n{1}\n", TWO, TimeThis("SquareRootFloor(TWO)", () => SquareRootFloor(TWO)));
-            WriteLine("SquareRootCeil({0}) =\n{1}\n", TWO, TimeThis("SquareRootCeil(TWO)", () => SquareRootCeil(TWO)));
+            WriteLine("SquareRoot({0}) =\n{1}\n", TWO, pf.TimeThis("SquareRoot(TWO)", () => pf.SquareRoot(TWO)));
+            WriteLine("Sqrt({0}) =\n{1}\n", TWO, pf.TimeThis("Sqrt(TWO)", () => pf.Sqrt(TWO)));
+            WriteLine("SquareRootFloor({0}) =\n{1}\n", TWO, pf.TimeThis("SquareRootFloor(TWO)", () => pf.SquareRootFloor(TWO)));
+            WriteLine("SquareRootCeil({0}) =\n{1}\n", TWO, pf.TimeThis("SquareRootCeil(TWO)", () => pf.SquareRootCeil(TWO)));
 
-            BigInteger BigInt_pi_squared_over_six = TimeThis("zeta_of_two_bigint()", () => zeta_of_two_bigint());
-            BigInteger BigInt_pi = TimeThis("SquareRoot(BigInt_pi_squared_over_six * 6)", () => SquareRoot(BigInt_pi_squared_over_six * 6));
+            BigInteger BigInt_pi_squared_over_six = pf.TimeThis("zeta_of_two_bigint()", () => pf.zeta_of_two_bigint());
+            BigInteger BigInt_pi = pf.TimeThis("SquareRoot(BigInt_pi_squared_over_six * 6)", () => pf.SquareRoot(BigInt_pi_squared_over_six * 6));
 #endif
             WriteLine("BigInt_pi²/6: {0}\n\n√(BigInt_pi²/6): {1}\n\n", BigInt_pi_squared_over_six, BigInt_pi);
 
             Write("Press Enter: ");
             ReadLine();
         }
-    }
-}
+    }   // class Program
+}   // namespace
