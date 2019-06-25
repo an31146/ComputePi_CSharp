@@ -137,7 +137,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSquareRootFloor:\n{y})\nElapsed time: {strElapsed}\n");
+            WriteLine($"\nSquareRootFloor:\n{y}\nElapsed time: {strElapsed}\n");
 #endif
             return y;
         }   // SquareRootFloor
@@ -171,7 +171,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSquareRootCeil:\n{y})\nElapsed time: {strElapsed}\n");
+            WriteLine($"\nSquareRootCeil:\n{y}\nElapsed time: {strElapsed}\n");
 #endif
 
             if (x.CompareTo(BigInteger.Multiply(y, y)) == 0)
@@ -190,22 +190,24 @@ namespace IntegerPi
             const double unity = 1.0;
 
             sum = unity;
-            object monitor = new object();
+            //object monitor = new object();
 
-            //for (uint i = 2; i < STEPS; i++)
-            Parallel.For<double>(2, STEPS, () => 2, (i, state, local) =>
+            for (uint i = 2; i < STEPS; i++)
+            //Parallel.For<double>(2, STEPS, () => 2, (i, state, local) =>
             {
                 double b = (double)i * i;           // b = i²
-                local = unity / b;                  // local = 1 / i²
+                double local = unity / b;                  // local = 1 / i²
                 sum += local;                       // sum = Ʃ (1 / i²)
                 //Write("{0} \r", local.ToString("F18", CultureInfo.InvariantCulture));
-                return (local);
-            }, local => {
-                lock (monitor)
-                {
-                    sum += local;
-                }
-            });
+            }
+
+            //return (local);
+            //}, local => {
+            //    lock (monitor)
+            //    {
+            //        sum += local;
+            //    }
+            //});
             return sum;
         }
 
@@ -293,6 +295,51 @@ namespace IntegerPi
             return sum;
         }
 
+        public BigInteger zeta_of_four_bigint()
+        {
+            BigInteger unity = normalize(1, DIGITS);
+            BigInteger exponent = unity;
+            unity *= unity;
+            unity *= unity;
+            BigInteger sum = unity;
+            unity *= unity;                     // normalize to become one
+
+            object monitor = new object();
+            Stopwatch sw = new Stopwatch();
+
+            sw.Start();
+
+            Parallel.For<BigInteger>(2, STEPS, () => 2, (i, loop, term) =>
+            //for (uint i = 2; i < STEPS; i++)
+            {
+                BigInteger b = i * exponent;
+                b *= b;     // b^2
+                b *= b;     // b^4
+                term = unity / b;
+                sum += term;
+                //Write("{0}\r", i);
+                return term;
+            }, term => {
+                lock (monitor)
+                {
+                    sum += term;
+                }
+            });
+            sw.Stop();
+#if DEBUG
+            string strElapsed;
+            if (sw.ElapsedMilliseconds <= 1000)
+                strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
+            else
+                strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
+
+            WriteLine($"\nzeta_of_four_bigint:\n{sum})\nElapsed time: {strElapsed}\n");
+#endif
+            WriteLine();
+            //WriteLine("{0}", unity);
+            return sum;
+        }
+
         /// <summary>Times the execution of a function and outputs both the elapsed time and the function's result.</summary>
         public dynamic TimeThis<T>(String strFuncName, Func<T> work)
         {
@@ -355,14 +402,14 @@ namespace IntegerPi
 #else
             double pi_squared_over_six = pf.TimeThis("zeta_of_two_double()", () => pf.zeta_of_two_double());
 #endif
-            WriteLine("pi²/6: {0}\n\n√(pi²/6): {1}\n\n", pi_squared_over_six, Math.Sqrt(pi_squared_over_six * 6.0d));
+            WriteLine("pi²/6: {0}\n\n√(pi²): {1}\n\n", pi_squared_over_six, Math.Sqrt(pi_squared_over_six * 6.0d));
 
 #if DEBUG
             double pi_to_the_fourth_over_ninety = pf.zeta_of_four_double();
 #else
             double pi_to_the_fourth_over_ninety = pf.TimeThis("zeta_of_four_double()", () => pf.zeta_of_four_double());
 #endif
-            WriteLine("pi⁴/90: {0}\n\n(pi⁴/90)^¼: {1}\n\n", pi_to_the_fourth_over_ninety, Math.Pow(pi_to_the_fourth_over_ninety * 90.0d, 0.25d));
+            WriteLine("pi⁴/90: {0}\n\n(pi⁴)^¼: {1}\n\n", pi_to_the_fourth_over_ninety, Math.Pow(pi_to_the_fourth_over_ninety * 90.0d, 0.25d));
 
             BigInteger TWO = pf.normalize(2, pf.DIGITS);
 #if DEBUG
@@ -373,6 +420,9 @@ namespace IntegerPi
 
             BigInteger BigInt_pi_squared_over_six = pf.zeta_of_two_bigint();
             BigInteger BigInt_pi = pf.SquareRoot(BigInt_pi_squared_over_six * 6);
+
+            BigInteger BigInt_pi_to_fourth_over_ninety = pf.zeta_of_four_bigint();
+            BigInt_pi = pf.SquareRoot(pf.SquareRoot(BigInt_pi_to_fourth_over_ninety * 90));
 #else
             WriteLine("SquareRoot({0}) =\n{1}\n", TWO, pf.TimeThis("SquareRoot(TWO)", () => pf.SquareRoot(TWO)));
             WriteLine("Sqrt({0}) =\n{1}\n", TWO, pf.TimeThis("Sqrt(TWO)", () => pf.Sqrt(TWO)));
@@ -381,8 +431,15 @@ namespace IntegerPi
 
             BigInteger BigInt_pi_squared_over_six = pf.TimeThis("zeta_of_two_bigint()", () => pf.zeta_of_two_bigint());
             BigInteger BigInt_pi = pf.TimeThis("SquareRoot(BigInt_pi_squared_over_six * 6)", () => pf.SquareRoot(BigInt_pi_squared_over_six * 6));
+
+            WriteLine("BigInt_pi²/6: {0}\n\n√(BigInt_pi²): {1}\n\n", BigInt_pi_squared_over_six, BigInt_pi);
+
+            BigInteger BigInt_pi_to_fourth_over_ninety = pf.TimeThis("zeta_of_four_bigint()", () => pf.zeta_of_four_bigint());
+            BigInt_pi = pf.TimeThis( "Root4(BigInt_pi_to_fourth_over_ninety)", () =>
+                                     pf.SquareRoot(pf.SquareRoot(BigInt_pi_to_fourth_over_ninety * 90)) );
+
+            WriteLine("BigInt_pi⁴/90: {0}\n\n⁴√(BigInt_pi⁴*90): {1}\n\n", BigInt_pi_to_fourth_over_ninety, BigInt_pi);
 #endif
-            WriteLine("BigInt_pi²/6: {0}\n\n√(BigInt_pi²/6): {1}\n\n", BigInt_pi_squared_over_six, BigInt_pi);
 
             Write("Press Enter: ");
             ReadLine();
