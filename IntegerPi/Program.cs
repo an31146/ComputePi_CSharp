@@ -437,9 +437,8 @@ namespace IntegerPi
             BigInteger BigInt_pi_to_fourth_over_ninety = pf.TimeThis("zeta_of_four_bigint()", () => pf.zeta_of_four_bigint());
             BigInt_pi = pf.TimeThis( "Root4(BigInt_pi_to_fourth_over_ninety)", () =>
                                      pf.SquareRoot(pf.SquareRoot(BigInt_pi_to_fourth_over_ninety * 90)) );
-
-            WriteLine("BigInt_pi⁴/90: {0}\n\n⁴√(BigInt_pi⁴*90): {1}\n\n", BigInt_pi_to_fourth_over_ninety, BigInt_pi);
 #endif
+            WriteLine("BigInt_pi⁴/90: {0}\n\n⁴√(BigInt_pi⁴*90): {1}\n\n", BigInt_pi_to_fourth_over_ninety, BigInt_pi);
 
             Write("Press Enter: ");
             ReadLine();
