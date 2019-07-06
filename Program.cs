@@ -16,7 +16,7 @@ namespace ComputePi
 {
     class Program
     {
-        private const int NUM_STEPS = 1000000000;
+        const int num_steps = 2000000000;
 
         /// <summary>Main method to time various implementations of computing PI.</summary>
         static void Main(string[] args)
@@ -47,8 +47,8 @@ namespace ComputePi
         /// <summary>Estimates the value of PI using a LINQ-based implementation.</summary>
         static double SerialLinqPi()
         {
-            double step = 1.0 / (double)NUM_STEPS;
-            return (from i in Enumerable.Range(0, NUM_STEPS)
+            double step = 1.0 / (double)num_steps;
+            return (from i in Enumerable.Range(0, num_steps)
                     let x = (i + 0.5) * step
                     select 4.0 / (1.0 + x * x)).Sum() * step;
         }
@@ -56,8 +56,8 @@ namespace ComputePi
         /// <summary>Estimates the value of PI using a PLINQ-based implementation.</summary>
         static double ParallelLinqPi()
         {
-            double step = 1.0 / (double)NUM_STEPS;
-            return (from i in ParallelEnumerable.Range(0, NUM_STEPS)
+            double step = 1.0 / (double)num_steps;
+            return (from i in ParallelEnumerable.Range(0, num_steps)
                     let x = (i + 0.5) * step
                     select 4.0 / (1.0 + x * x)).Sum() * step;
         }
@@ -66,8 +66,8 @@ namespace ComputePi
         static double SerialPi()
         {
             double sum = 0.0;
-            double step = 1.0 / (double)NUM_STEPS;
-            for (int i = 0; i < NUM_STEPS; i++)
+            double step = 1.0 / (double)num_steps;
+            for (int i = 0; i < num_steps; i++)
             {
                 double x = (i + 0.5) * step;
                 sum = sum + 4.0 / (1.0 + x * x);
@@ -79,9 +79,9 @@ namespace ComputePi
         static double ParallelPi()
         {
             double sum = 0.0;
-            double step = 1.0 / (double)NUM_STEPS;
+            double step = 1.0 / (double)num_steps;
             object monitor = new object();
-            Parallel.For(0, NUM_STEPS, () => 0.0, (i, state, local) =>
+            Parallel.For(0, num_steps, () => 0.0, (i, state, local) =>
             {
                 double x = (i + 0.5) * step;
                 return local + 4.0 / (1.0 + x * x);
@@ -93,9 +93,9 @@ namespace ComputePi
         static double ParallelPartitionerPi()
         {
             double sum = 0.0;
-            double step = 1.0 / (double)NUM_STEPS;
+            double step = 1.0 / (double)num_steps;
             object monitor = new object();
-            Parallel.ForEach(Partitioner.Create(0, NUM_STEPS), () => 0.0, (range, state, local) =>
+            Parallel.ForEach(Partitioner.Create(0, num_steps), () => 0.0, (range, state, local) =>
             {
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
