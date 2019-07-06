@@ -357,8 +357,7 @@ namespace IntegerPi
             if (sw.ElapsedMilliseconds <= 1000)
                 strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
             else
-                strElapsed = String.Format("{0:F1} s", (float)sw.Elapsed.Milliseconds / 1000);
-            //WriteLine("{0} ms\n", sw.ElapsedMilliseconds);
+                strElapsed = String.Format("{0:F1} s", (float)sw.Elapsed.Seconds);
             WriteLine(strElapsed);
 
             return result;
@@ -372,12 +371,17 @@ namespace IntegerPi
             }
 
             var sw = Stopwatch.StartNew();
-            ArgIterator b = new ArgIterator();
+            ArgIterator b = new ArgIterator();                          // what is this line for?
             Func<T, BigInteger> selector = arg => work(arg);
             var result = selector;
             sw.Stop();
             Write("--- {0} ---\t", strFuncName);
-            WriteLine("{0} ms\n", sw.ElapsedMilliseconds);
+            string strElapsed;
+            if (sw.ElapsedMilliseconds <= 1000)
+                strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
+            else
+                strElapsed = String.Format("{0:F1} s", (float)sw.Elapsed.Seconds);
+            WriteLine(strElapsed);
             return result;
         }
     }   // class PiFunctions
