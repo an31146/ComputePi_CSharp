@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 
 using static System.Console;
 
-#pragma warning disable IDE1006,IDE0049,CS0168,IDE0039,CS0219
+#pragma warning disable IDE1006,IDE0049,CS0168,IDE0032,IDE0039,CS0219
 /*
  * IDE1006 Suppress Naming Rule Violation IDE1006
  * IDE0049 Name Can Be Simplified
+ * IDE0032 Use auto property
  * IDE0039 Use local function
  * CS0168  The variable 'var' is declared but never used.
  * CS0219  The variable 'b' is assigned but its value is never used
@@ -33,10 +34,10 @@ namespace IntegerPi
             set { m_DIGITS = value; }
         }
 
-        public PiFunctions()
+        public PiFunctions(uint STEPS = 20000000, uint DIGITS = 100)
         {
-            m_STEPS = 20000000;
-            m_DIGITS = 100;
+            m_STEPS = STEPS;
+            m_DIGITS = DIGITS;
         }
 
         public BigInteger SquareRoot(BigInteger n)
@@ -263,6 +264,8 @@ namespace IntegerPi
             object monitor = new object();
             Stopwatch sw = new Stopwatch();
 
+            WriteLine("Calculating zeta_of_two_bigint() with {0} iterations and {1} digits.", STEPS, DIGITS);
+
             sw.Start();
 
             Parallel.For<BigInteger>(2, STEPS, () => 2, (i, loop, term) =>
@@ -306,6 +309,8 @@ namespace IntegerPi
 
             object monitor = new object();
             Stopwatch sw = new Stopwatch();
+
+            WriteLine("Calculating zeta_of_four_bigint() with {0} iterations and {1} digits.", STEPS, DIGITS);
 
             sw.Start();
 
