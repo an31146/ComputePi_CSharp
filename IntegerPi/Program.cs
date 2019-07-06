@@ -268,21 +268,18 @@ namespace IntegerPi
 
             sw.Start();
 
-            Parallel.For<BigInteger>(2, STEPS, () => 2, (i, loop, term) =>
-            //for (uint i = 2; i < STEPS; i++)
+            //Parallel.For<BigInteger>(2, STEPS, () => 2, (i, loop, term) =>
+            for (uint i = 2; i < STEPS; i++)
             {
                 BigInteger b = i * exponent;
                 b *= b;
-                term = unity / b;
+                BigInteger term = unity / b;
                 sum += term;
                 //Write("{0}\r", i);
-                return term;
-            }, term => {
-                lock (monitor)
-                {
-                    sum += term;
-                }
-            });
+                //return term;
+            //}, term => {
+            //    lock (monitor) { sum += term; }
+            } //);
             sw.Stop();
 #if DEBUG
             string strElapsed;
@@ -440,9 +437,9 @@ namespace IntegerPi
 
             BigInteger BigInt_pi_squared_over_six = pf.TimeThis("zeta_of_two_bigint()", () => pf.zeta_of_two_bigint());
             BigInteger BigInt_pi = pf.TimeThis("SquareRoot(BigInt_pi_squared_over_six * 6)", () => pf.SquareRoot(BigInt_pi_squared_over_six * 6));
-
+#endif
             WriteLine("BigInt_pi²/6: {0}\n\n√(BigInt_pi²): {1}\n\n", BigInt_pi_squared_over_six, BigInt_pi);
-
+#if !DEBUG
             BigInteger BigInt_pi_to_fourth_over_ninety = pf.TimeThis("zeta_of_four_bigint()", () => pf.zeta_of_four_bigint());
             BigInt_pi = pf.TimeThis( "Root4(BigInt_pi_to_fourth_over_ninety)", () =>
                                      pf.SquareRoot(pf.SquareRoot(BigInt_pi_to_fourth_over_ninety * 90)) );
