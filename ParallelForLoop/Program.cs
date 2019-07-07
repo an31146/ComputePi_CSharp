@@ -21,8 +21,8 @@ namespace ParallelForLoop
 
             sw.Start();
             {
-                // Use type parameter to make subtotal a long, not an int
                 WriteLine("{0} {1}", nums.Length, B-A);
+                // Use type parameter to make subtotal a long, not an int
                 Parallel.For<long>(0, nums.Length, () => total, (j, loop, subtotal) =>
                     {
                         subtotal += nums[j];
@@ -41,7 +41,7 @@ namespace ParallelForLoop
             total = 0;
             sw.Restart();
             {
-                foreach (int n in nums)
+                foreach (var n in nums)
                     total += n;
             }
             sw.Stop();
