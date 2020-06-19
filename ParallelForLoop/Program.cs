@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,8 +10,8 @@ namespace ParallelForLoop
 {
     class Test
     {
-        const int A = -100000000;
-        const int B = 100000001;
+        const int A = -20000000;
+        const int B = 20000001;
 
         static void Main(string[] args)
         {
@@ -19,13 +20,14 @@ namespace ParallelForLoop
             object lockObj = new object();
             Stopwatch sw = new Stopwatch();
 
+            WriteLine("sizeof nums[]: {0:N0} bytes\n", sizeof(int) * nums.Length);
             sw.Start();
             {
-                WriteLine("{0} {1}", nums.Length, B-A);
+                WriteLine($"nums.Length: {nums.Length:N0}\nB - A:       {B - A:N0}\n");
                 // Use type parameter to make subtotal a long, not an int
                 Parallel.For<long>(0, nums.Length, () => total, (j, loop, subtotal) =>
                     {
-                        subtotal += nums[j];
+                        subtotal += (long)nums[j];
                         //WriteLine("{0}", subtotal);
                         //if (nums[j] > 0)
                         //    loop.Stop();

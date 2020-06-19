@@ -1,4 +1,4 @@
-﻿//--------------------------------------------------------------------------
+﻿ //--------------------------------------------------------------------------
 // 
 //  Copyright (c) Microsoft Corporation.  All rights reserved. 
 // 
@@ -41,25 +41,25 @@ namespace ComputePi
             var result = work();
             sw.Stop();
             Console.WriteLine("--- {0} ---", strFuncName);
-            Console.WriteLine(sw.Elapsed + ": " + result + "\n");
+            Console.WriteLine(String.Format("{0:c}", sw.Elapsed) + ": " + result + "\n");
         }
 
         /// <summary>Estimates the value of PI using a LINQ-based implementation.</summary>
         static double SerialLinqPi()
         {
             double step = 1.0 / (double)NUM_STEPS;
-            return (from i in Enumerable.Range(0, NUM_STEPS)
+            return 4.0d * (from i in Enumerable.Range(0, NUM_STEPS)
                     let x = (i + 0.5) * step
-                    select 4.0 / (1.0 + x * x)).Sum() * step;
+                    select 1.0d / (1.0d + x * x)).Sum() * step;
         }
 
         /// <summary>Estimates the value of PI using a PLINQ-based implementation.</summary>
         static double ParallelLinqPi()
         {
             double step = 1.0 / (double)NUM_STEPS;
-            return (from i in ParallelEnumerable.Range(0, NUM_STEPS)
+            return 4.0d * (from i in ParallelEnumerable.Range(0, NUM_STEPS)
                     let x = (i + 0.5) * step
-                    select 4.0 / (1.0 + x * x)).Sum() * step;
+                    select 1.0d / (1.0d + x * x)).Sum() * step;
         }
 
         /// <summary>Estimates the value of PI using a for loop.</summary>
@@ -70,9 +70,9 @@ namespace ComputePi
             for (int i = 0; i < NUM_STEPS; i++)
             {
                 double x = (i + 0.5) * step;
-                sum = sum + 4.0 / (1.0 + x * x);
+                sum = sum + 1.0d / (1.0d + x * x);
             }
-            return step * sum;
+            return 4.0d * step * sum;
         }
 
         /// <summary>Estimates the value of PI using a Parallel.For.</summary>
@@ -84,9 +84,9 @@ namespace ComputePi
             Parallel.For(0, NUM_STEPS, () => 0.0, (i, state, local) =>
             {
                 double x = (i + 0.5) * step;
-                return local + 4.0 / (1.0 + x * x);
+                return local + 1.0d / (1.0d + x * x);
             }, local => { lock (monitor) sum += local; });
-            return step * sum;
+            return 4.0d * step * sum;
         }
 
         /// <summary>Estimates the value of PI using a Parallel.ForEach and a range partitioner.</summary>
@@ -95,16 +95,18 @@ namespace ComputePi
             double sum = 0.0;
             double step = 1.0 / (double)NUM_STEPS;
             object monitor = new object();
+            //object monitor2 = new object();
             Parallel.ForEach(Partitioner.Create(0, NUM_STEPS), () => 0.0, (range, state, local) =>
             {
+                //lock (monitor2) Console.WriteLine($"{range.Item1} {range.Item2}");
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
                     double x = (i + 0.5) * step;
-                    local += 4.0 / (1.0 + x * x);
+                    local += 1.0d / (1.0d + x * x);
                 }
                 return local;
             }, local => { lock (monitor) sum += local; });
-            return step * sum;
+            return 4.0d * step * sum;
         }
     }
 }
