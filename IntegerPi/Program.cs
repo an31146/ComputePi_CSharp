@@ -104,7 +104,7 @@ namespace IntegerPi
             int N = (int)((m_DIGITS >> 1) * 1.25);
             BigInteger N1 = 4 * ONE / (n << N);
             BigInteger agm = BigIntAGM(ONE, N1) << 1;
-            BigInteger PI = Ramanujan(m_STEPS);
+            BigInteger PI = Ramanujan(m_STEPS);     // substitute with higher precision to calculate without halving m_DIGITS
 
             int one_len = ONE.ToString().Length;
             int pi_len = (int)((PI.ToString().Length >> 1) * 1.25);
@@ -294,7 +294,7 @@ namespace IntegerPi
         
         public BigInteger Factorial(uint n)
         {
-            BigInteger ONE = new BigInteger(1L);
+            BigInteger ONE = 1;
             BigInteger factorial = ONE;
             Stopwatch sw = new Stopwatch();
 
@@ -332,13 +332,12 @@ namespace IntegerPi
                 term /= BigInteger.Pow(396, 4 * (int)i);
                 sum += term;
             }
-            BigInteger mult = TWO * sqrtTwo / normalize(9801, DIGITS);
+            BigInteger mult = TWO * sqrtTwo / normalize(9801, m_DIGITS);
             sum *= mult;
             //BigInteger reciprocal = normalize(1, (uint)sum.ToString().Length + 1) / sum;
             BigInteger reciprocal = ONE * ONE /  sum;
             sw.Stop();
 
-            //WriteLine("ONE * ONE: {0}\n", ONE * ONE);
             WriteLine($"Sum of terms:\n{sum}\n");
             WriteLine($"1 / π:\n{reciprocal}\n");
 #if DEBUG
