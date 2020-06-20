@@ -58,8 +58,9 @@ namespace IntegerPi
         }
 
         // following adapted from https://bit.ly/3hC5fTr
-        public BigInteger ExpFixed(uint digits)
+        public BigInteger ExpFixed()
         {
+            uint digits = m_DIGITS;
             uint prec = (uint)(digits / Math.Log(10, 2));
             int N = (int)(2.95 * digits / Math.Log(digits) + 35);
             Tuple<BigInteger, BigInteger> p = BinarySplit(0, N);
@@ -68,8 +69,9 @@ namespace IntegerPi
             return (p.Item1 + p.Item2) * normalize(1, digits >> 1) / p.Item2; 
         }
 
-        public BigInteger LN2Fixed(uint digits)
+        public BigInteger LN2Fixed()
         {
+            uint digits = m_DIGITS;
             uint N = (uint)(digits * 1.1); 
             BigInteger one_third = normalize(1, digits + 4 >> 1) / 3;
             BigInteger sum = one_third;
@@ -80,7 +82,7 @@ namespace IntegerPi
                 sum += one_third / (2 * n + 1);
             }
             sum /= 1000;                    // truncate last few digits due to rounding
-            return sum << 1;
+            return (sum << 1) / 10;         // 1 digit less than {m_DIGITS} to represent decimal
         }
 
         // Assumes parameters are already normalized fixed-point to {m_DIGITS} places
@@ -96,16 +98,23 @@ namespace IntegerPi
             return a;
         }
 
-        public BigInteger BigIntLogN(BigInteger n, uint digits)
+        public BigInteger BigIntLogN(BigInteger n)
         {
             // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/operators/
-            uint N = (uint)(digits * 1.1);
-            BigInteger ONE = normalize(1, digits + 4 >> 1);
-            BigInteger N1 = ONE / 10240;
-            int nLength = n.ToString().Length;
+            int N = (int)m_DIGITS >> 1;
+            BigInteger N1 = 4 * ONE / (n << N);
+            BigInteger agm = BigIntAGM(ONE, N1) << 1;
+            BigInteger PI = Ramanujan(m_STEPS);
 
-            BigInteger next = BigIntAGM(normalize(1, N1), N1);
-            return next;
+            int one_len = ONE.ToString().Length;
+            int pi_len = PI.ToString().Length >> 1;
+            int agm_len = agm.ToString().Length;
+            int agm2_len = agm_len - pi_len;        // OMG! Sooo complicated...
+            agm /= BigInteger.Pow(10, agm2_len + one_len - agm_len);
+            BigInteger LogN = PI / agm;
+            int logN_len = LogN.ToString().Length;
+            LogN -= N * LN2Fixed();
+            return LogN;
         }
 
         public BigInteger SquareRoot(BigInteger n)
@@ -309,8 +318,6 @@ namespace IntegerPi
 
         public BigInteger Ramanujan(uint n)
         {
-            BigInteger ONE = normalize(1, DIGITS);
-            BigInteger TWO = normalize(2, DIGITS);
             BigInteger sqrtTwo = SquareRoot(TWO);
             BigInteger sum = 0;
 
@@ -436,34 +443,35 @@ namespace IntegerPi
                 return BigInteger.Parse(strA + new String('0', strLenB - strLenA));
         }
 
-        public BigInteger zeta_of_two_bigint()
+        public BigInteger BigIntZeta(uint s)    // must be +ve integer > 1
         {
-            BigInteger unity = normalize(1, DIGITS);
-            BigInteger exponent = unity;
-            unity *= unity;
-            BigInteger sum = unity;
-            unity *= unity;                     // normalize to become one
+            BigInteger unity = BigInteger.Pow(ONE, (int)(s >> 1));             // normalize to become 1 in the numerator 
+            double sum = 1.0d;
+            BigInteger zeta = unity;
 
             object monitor = new object();
             Stopwatch sw = new Stopwatch();
 
-            WriteLine("Calculating zeta_of_two_bigint() with {0} iterations and {1} digits.", STEPS, DIGITS);
+            WriteLine("Calculating BigIntZeta({2}) with {0} iterations and {1} digits.", STEPS, DIGITS, s);
 
             sw.Start();
-
-            //Parallel.For<BigInteger>(2, STEPS, () => 2, (i, loop, term) =>
-            for (uint i = 2; i < STEPS; i++)
+            Parallel.For<Tuple<double, BigInteger>>(2, (int)STEPS, () => new Tuple<double, BigInteger>(2.0d, 2), (i, loop, T) =>
+            //for (uint i = 2; i < STEPS; i++)
             {
-                BigInteger b = i * exponent;
-                b *= b;
-                BigInteger term = unity / b;
-                sum += term;
-                //Write("{0:F1}%\r", 100.0d * i / STEPS);
-                //return term;
-            //}, term => {
-            //    lock (monitor) { sum += term; }
-            } //);
-            WriteLine();
+                BigInteger div = BigInteger.Pow(i, (int)s);
+                //zeta += unity / j;
+                sum += 1.0d / Math.Pow(i, s);
+                ValueTuple<double, BigInteger> X = T.ToValueTuple();
+                X.Item1 += i;
+                X.Item2 += unity / div;
+                return X.ToTuple();
+            }, t => {
+                lock (monitor)
+                {
+                    sum += t.Item1;
+                    zeta += t.Item2;
+                }
+            });
             sw.Stop();
 #if DEBUG
             string strElapsed;
@@ -472,21 +480,16 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nzeta_of_two_bigint:\n{sum}\nElapsed time: {strElapsed}\n");
+            WriteLine($"\nBigIntZeta({s}):\n{zeta}\nElapsed time: {strElapsed}\n");
 #endif
             WriteLine();
-            //WriteLine("{0}", unity);
-            return sum;
+            return zeta;
         }
 
         public BigInteger zeta_of_four_bigint()
         {
-            BigInteger unity = normalize(1, DIGITS);
-            BigInteger exponent = unity;
-            unity *= unity;
-            unity *= unity;
+            BigInteger unity = ONE * ONE;
             BigInteger sum = unity;
-            unity *= unity;                     // normalize to become one
 
             object monitor = new object();
             Stopwatch sw = new Stopwatch();
@@ -494,20 +497,15 @@ namespace IntegerPi
             WriteLine("Calculating zeta_of_four_bigint() with {0} iterations and {1} digits.", STEPS, DIGITS);
 
             sw.Start();
-
             Parallel.For<BigInteger>(2, STEPS, () => 2, (i, loop, term) =>
-            //for (uint i = 2; i < STEPS; i++)
             {
-                BigInteger b = i * exponent;
-                b *= b;     // b^2
-                b *= b;     // b^4
-                term = unity / b;
-                sum += term;
-                //Write("{0}\r", i);
+                BigInteger b = i;
+                b = BigInteger.Pow(b, 4);     // b^4
+                term += unity / b;
+                //sum += term;
                 return term;
             }, term => {
-                lock (monitor)
-                {
+                lock (monitor) { 
                     sum += term;
                 }
             });
@@ -522,7 +520,6 @@ namespace IntegerPi
             WriteLine($"\nzeta_of_four_bigint:\n{sum}\nElapsed time: {strElapsed}\n");
 #endif
             WriteLine();
-            //WriteLine("{0}", unity);
             return sum;
         }
 
@@ -609,16 +606,15 @@ namespace IntegerPi
             WriteLine("SquareRootFloor({0}) =\n{1}\n", pf.TWO, pf.SquareRootFloor(pf.TWO));
             WriteLine("SquareRootCeil({0}) =\n{1}\n", pf.TWO, pf.SquareRootCeil(pf.TWO));
 #endif
-#if EXP
-            WriteLine("ExpFixed =\n{0}\n", pf.ExpFixed(pf.DIGITS));
-#endif
-#if LN
-            WriteLine("LN2Fixed =\n{0}\n", pf.LN2Fixed(pf.DIGITS));
-            WriteLine("BigIntLogN(2) =\n{0}\n", pf.BigIntLogN(1024, pf.DIGITS));
+#if EXP || LN
             BigInteger sqrt2 = pf.SquareRoot(pf.TWO);
             BigInteger biAGM = pf.BigIntAGM(pf.normalize(pf.ONE, sqrt2), sqrt2);
             WriteLine("BigIntAGM(1, √2) =\n{0}\n", biAGM);
             WriteLine("Gauss's constant =\n{0}\n", pf.ONE / biAGM);
+
+            WriteLine("ExpFixed =\n{0}\n", pf.ExpFixed());
+            WriteLine("LN2Fixed =\n{0}\n", pf.LN2Fixed());
+            WriteLine("BigIntLogN({0}) =\n{1}\n", 10, pf.BigIntLogN(10));
 #endif
 #if FACT
             WriteLine("Factorial({0}) = \n{1}\n", 100, pf.Factorial(100));
@@ -626,18 +622,18 @@ namespace IntegerPi
 #if RAMANUJAN
             // 12 terms accurate to 103 d.p.
             // 6 req. for default prec to 53 d.p.
-            WriteLine("Ramanujan series π:\n {0}\n\n", pf.Ramanujan(pf.STEPS));         // 44 terms accurate to 308 d.p. + rounding error
+            WriteLine("Ramanujan series π:\n {0}\n\n", pf.Ramanujan(pf.STEPS));         // 43 terms accurate to 309 d.p. + rounding error
                                                                                         // 49 terms accurate to 397 d.p.
                                                                                         // 125 terms  accurate to 1002 d.p.
 #endif
 #if ZETA
-            BigInteger BigInt_pi_squared_over_six = pf.zeta_of_two_bigint();
-            BigInteger BigInt_pi = pf.SquareRoot(BigInt_pi_squared_over_six * 6);
-            WriteLine("BigInt_pi²/6: {0}\n\n⁴√(BigInt_pi²*6): {1}\n\n", BigInt_pi_squared_over_six, BigInt_pi);
+            BigInteger BigIntZeta4 = pf.BigIntZeta(4);
+            BigInteger BigInt_pi = pf.NthRoot(BigIntZeta4 * 90, 4);
+            WriteLine("BigInt_pi⁴/6: {0}\n\n⁴√(BigInt_pi⁴*6): {1}\n\n", BigIntZeta4, BigInt_pi);
 
-            BigInteger BigInt_pi_to_fourth_over_ninety = pf.zeta_of_four_bigint();
-            BigInt_pi = pf.SquareRoot(pf.SquareRoot(BigInt_pi_to_fourth_over_ninety * 90));
-            WriteLine("BigInt_pi⁴/90: {0}\n\n⁴√(BigInt_pi⁴*90): {1}\n\n", BigInt_pi_to_fourth_over_ninety, BigInt_pi);
+            BigInteger BigIntZeta6= pf.BigIntZeta(6);
+            BigInt_pi = pf.NthRoot(BigIntZeta6 * 945, 6);
+            WriteLine("BigInt_pi⁶/945: {0}\n\n⁶√(BigInt_pi⁶*945): {1}\n\n", BigIntZeta6, BigInt_pi);
 #endif
 #else
 #if SQRT
