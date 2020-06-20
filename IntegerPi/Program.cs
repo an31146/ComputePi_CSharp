@@ -82,7 +82,7 @@ namespace IntegerPi
                 sum += one_third / (2 * n + 1);
             }
             sum /= 1000;                    // truncate last few digits due to rounding
-            return (sum << 1) / 10;         // 1 digit less than {m_DIGITS} to represent decimal
+            return (sum << 1);              // multiply by 2
         }
 
         // Assumes parameters are already normalized fixed-point to {m_DIGITS} places
@@ -101,20 +101,20 @@ namespace IntegerPi
         public BigInteger BigIntLogN(BigInteger n)
         {
             // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/operators/
-            int N = (int)m_DIGITS >> 1;
+            int N = (int)((m_DIGITS >> 1) * 1.25);
             BigInteger N1 = 4 * ONE / (n << N);
             BigInteger agm = BigIntAGM(ONE, N1) << 1;
             BigInteger PI = Ramanujan(m_STEPS);
 
             int one_len = ONE.ToString().Length;
-            int pi_len = PI.ToString().Length >> 1;
+            int pi_len = (int)((PI.ToString().Length >> 1) * 1.25);
             int agm_len = agm.ToString().Length;
             int agm2_len = agm_len - pi_len;        // OMG! Sooo complicated...
             agm /= BigInteger.Pow(10, agm2_len + one_len - agm_len);
             BigInteger LogN = PI / agm;
             int logN_len = LogN.ToString().Length;
-            LogN -= N * LN2Fixed();
-            return LogN;
+            LogN -= N * LN2Fixed() / BigInteger.Pow(10, N);
+            return LogN / 100;                    // truncate trailing 4 digits due to rounding error
         }
 
         public BigInteger SquareRoot(BigInteger n)
@@ -614,7 +614,7 @@ namespace IntegerPi
 
             WriteLine("ExpFixed =\n{0}\n", pf.ExpFixed());
             WriteLine("LN2Fixed =\n{0}\n", pf.LN2Fixed());
-            WriteLine("BigIntLogN({0}) =\n{1}\n", 10, pf.BigIntLogN(10));
+            WriteLine("BigIntLogN({0}) =\n{1}\n", 100, pf.BigIntLogN(100));
 #endif
 #if FACT
             WriteLine("Factorial({0}) = \n{1}\n", 100, pf.Factorial(100));
