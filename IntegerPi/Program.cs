@@ -103,20 +103,23 @@ namespace IntegerPi
         public BigInteger BigIntLogN(BigInteger n)
         {
             // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/operators/
-            int N = (int)(m_DIGITS >> 1);
+            int N = (int)(m_DIGITS * Math.Log(10, 2));
             BigInteger N1 = 4 * ONE / (n << N);
             BigInteger agm = BigIntAGM(ONE, N1) << 1;
-            BigInteger PI = RamanujanFixed();               // substitute with higher precision to calculate without halving m_DIGITS
+            BigInteger PI = BBPFixed();               // substitute with higher precision to calculate without halving m_DIGITS
 
-            int one_len = ONE.ToString().Length;
+            //int one_len = ONE.ToString().Length;
             int pi_len = PI.ToString().Length;
-            int agm_len = agm.ToString().Length;
-            int agm2_len = agm_len - N + 1;             // OMG! Sooo complicated...
-            agm /= BigInteger.Pow(10, agm2_len);
+            int agm_len = agm.ToString().Length;             // OMG! Sooo complicated...
+            int agm2_len = agm_len - (agm_len - pi_len >> 1);       // when using RamanujanFixed()
+            
+            agm /= BigInteger.Pow(10, (int)(pi_len - (agm_len >> 1)));          // using BBPFixed()
+            int agm3_len = agm.ToString().Length;
             BigInteger LogN = PI / agm;
             int logN_len = LogN.ToString().Length;
-            LogN -= N * LN2Fixed() / BigInteger.Pow(10, N);
-            return LogN / 100;                    // truncate trailing 4 digits due to rounding error
+            int ln2_len = (LN2Fixed() * N).ToString().Length;
+            LogN -= N * LN2Fixed() * BigInteger.Pow(10, logN_len - ln2_len);
+            return LogN;                                    // truncate trailing ? digits due to rounding error
         }
 
         public BigInteger SquareRoot(BigInteger n)
@@ -683,7 +686,7 @@ namespace IntegerPi
             WriteLine("Gauss's constant =\n{0}\n", pf.ONE / biAGM);
 
             WriteLine("LN2Fixed =\n{0}\n", pf.LN2Fixed());
-            for (long pow_of_ten = 1000000000; pow_of_ten <= 1000000000000; pow_of_ten *= 10)
+            for (long pow_of_ten = 10; pow_of_ten <= 10000; pow_of_ten *= 10)
             {
                 WriteLine("BigIntLogN({0}) =\n{1}\n", pow_of_ten, pf.BigIntLogN(pow_of_ten));
             }
