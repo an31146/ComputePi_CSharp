@@ -113,7 +113,7 @@ namespace IntegerPi
             int agm_len = agm.ToString().Length;             // OMG! Sooo complicated...
             int agm2_len = agm_len - (agm_len - pi_len >> 1);       // when using RamanujanFixed()
             
-            agm /= BigInteger.Pow(10, (int)(pi_len - (agm_len >> 1)));          // using BBPFixed()
+            agm /= BigInteger.Pow(10, pi_len - (agm_len >> 1));          // using BBPFixed()
             int agm3_len = agm.ToString().Length;
             BigInteger LogN = PI / agm;
             int logN_len = LogN.ToString().Length;
@@ -331,10 +331,11 @@ namespace IntegerPi
             sw.Start();
             for (uint i = 0; i <= m_DIGITS / 8; i++)                           // each term adds ~10 d.p.
             {
+                uint j = i << 2;
                 BigInteger term = ONE * (1103 + (26390 * i));
-                term *= Factorial(4 * i);
+                term *= Factorial(j);
                 term /= BigInteger.Pow(Factorial(i), 4);
-                term /= BigInteger.Pow(396, 4 * (int)i);
+                term /= BigInteger.Pow(396, (int)j);
                 sum += term;
             }
             BigInteger mult = TWO * sqrtTwo / normalize(9801, m_DIGITS);
@@ -343,9 +344,9 @@ namespace IntegerPi
             BigInteger reciprocal = ONE * ONE /  sum;
             sw.Stop();
 
+#if DEBUG
             WriteLine($"Sum of terms:\n{sum}\n");
             WriteLine($"1 / π:\n{reciprocal}\n");
-#if DEBUG
             string strElapsed;
             if (sw.ElapsedMilliseconds <= 1000)
                 strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
@@ -388,7 +389,7 @@ namespace IntegerPi
             return sum;
         }
 
-        public double  SlowHarmonicSeries(long N)
+        public double SlowHarmonicSeries(long N)
         {
             double sum = 0, term;
             // Can this loop be parallelized?  Yes, but it doesn't work.
@@ -420,7 +421,19 @@ namespace IntegerPi
 
         public double Euler()
         {
-            return SlowHarmonicSeries(8000000000) - Math.Log(8000000000);
+            const long n = 4000000000L;
+            return SlowHarmonicSeries(n) - Math.Log(n) - 1.0 / (n >> 1) + 1.0 / n / (n * 12.0);
+        }
+
+        public BigInteger SlowHarmonicSeries()
+        {
+            BigInteger _ONE = ONE / BigInteger.Pow(10, (int)m_DIGITS);
+            BigInteger sum = 0;
+
+            for (BigInteger n = 1; n <= BigInteger.Pow(10, (int)m_DIGITS); n++)
+                sum += _ONE / n;
+
+            return sum;
         }
 
         public double zeta_of_two_double()
@@ -610,7 +623,7 @@ namespace IntegerPi
             if (sw.ElapsedMilliseconds <= 1000)
                 strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
             else
-                strElapsed = String.Format("{0:F1} s", (float)sw.Elapsed.Seconds);
+                strElapsed = String.Format("{0:F1} s", (float)sw.Elapsed.TotalSeconds);
             WriteLine(strElapsed);
 
             return result;
@@ -633,7 +646,7 @@ namespace IntegerPi
             if (sw.ElapsedMilliseconds <= 1000)
                 strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
             else
-                strElapsed = String.Format("{0:F1} s", (float)sw.Elapsed.Seconds);
+                strElapsed = String.Format("{0:F1} s", (float)sw.Elapsed.TotalSeconds);
             WriteLine(strElapsed);
             return result;
         }
@@ -692,6 +705,7 @@ namespace IntegerPi
             }
 #endif
 #if EULER
+            //WriteLine("SlowHarmonicSeries()", pf.SlowHarmonicSeries());
             WriteLine("Euler-Mascheroni constant =\n{0}\n", pf.Euler());
 #endif
 #if FACT
@@ -732,12 +746,8 @@ namespace IntegerPi
             WriteLine("Factorial({0}) = \n{1}\n", 100, pf.TimeThis("Factorial(100)", () => pf.Factorial(100)));
 #endif
 
-#if RAMANUJAN
-            WriteLine("Ramanujan series π:\n {0}\n\n", pf.TimeThis("Ramanujan()", () => pf.Ramanujan(pf.STEPS)));
-#endif
 
-#endif
-#if !DEBUG && ZETA
+#if ZETA
             BigInteger BigInt_pi_squared_over_six = pf.TimeThis("zeta_of_two_bigint()", () => pf.zeta_of_two_bigint());
             BigInteger BigInt_pi = pf.TimeThis("SquareRoot(BigInt_pi_squared_over_six * 6)", () => pf.SquareRoot(BigInt_pi_squared_over_six * 6));
             WriteLine("BigInt_pi²/6: {0}\n\n√(BigInt_pi²): {1}\n\n", BigInt_pi_squared_over_six, BigInt_pi);
@@ -745,6 +755,14 @@ namespace IntegerPi
             BigInteger BigInt_pi_to_fourth_over_ninety = pf.TimeThis("zeta_of_four_bigint()", () => pf.zeta_of_four_bigint());
             BigInt_pi = pf.TimeThis( "Root4(BigInt_pi_to_fourth_over_ninety)", () =>
                                      pf.SquareRoot(pf.SquareRoot(BigInt_pi_to_fourth_over_ninety * 90)) );
+#endif
+#if RAMANUJAN
+            WriteLine("Ramanujan series π:\n {0}\n\n", pf.TimeThis("RamanujanFixed()", () => pf.RamanujanFixed().ToString().Insert(1, ".")));
+#endif
+#if BBP
+            // 256 terms accurate to 309 d.p. 
+            WriteLine("BBP series π:\n{0}\n\n", pf.TimeThis("BBPFixed()", () => pf.BBPFixed().ToString().Insert(1, ".")));
+#endif
 #endif
             Write("Press Enter: ");
             ReadLine();
