@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
@@ -106,26 +107,35 @@ namespace IntegerPi
             int N = (int)(m_DIGITS * Math.Log(10, 2));
             BigInteger N1 = 4 * ONE / (n << N);
             BigInteger agm = BigIntAGM(ONE, N1) << 1;
+            
+            uint tmpDIGITS = m_DIGITS; DIGITS = (uint)N;
             BigInteger PI = BBPFixed();               // substitute with higher precision to calculate without halving m_DIGITS
+            DIGITS = tmpDIGITS;
 
             //int one_len = ONE.ToString().Length;
             int pi_len = PI.ToString().Length;
             int agm_len = agm.ToString().Length;             // OMG! Sooo complicated...
             int agm2_len = agm_len - (agm_len - pi_len >> 1);       // when using RamanujanFixed()
             
-            agm /= BigInteger.Pow(10, pi_len - (agm_len >> 1));          // using BBPFixed()
+            agm /= BigInteger.Pow(10, agm_len - (agm_len >> 1));          // using BBPFixed() - broken it again...
             int agm3_len = agm.ToString().Length;
             BigInteger LogN = PI / agm;
             int logN_len = LogN.ToString().Length;
-            int ln2_len = (LN2Fixed() * N).ToString().Length;
-            LogN -= N * LN2Fixed() * BigInteger.Pow(10, logN_len - ln2_len);
+            LogN /= BigInteger.Pow(10, logN_len >> 1);
+            BigInteger c = LN2Fixed() * N;
+            int ln2_len = c.ToString().Length;
+            LogN = normalize(LogN, c);
+            LogN -= c;
             return LogN;                                    // truncate trailing ? digits due to rounding error
         }
 
         public BigInteger SquareRoot(BigInteger n)
         {
-            BigInteger div = n >> 1, _div, quotient, _doubleOfQuotient, _remainder;
+            int LogBase2 = (int)BigInteger.Log(n, 2);
+            BigInteger div = n >> (int)(LogBase2 >> 1);
+            BigInteger _div, quotient, _doubleOfQuotient, _remainder;
             bool bBreakExpr = false;
+            int iterations = 0;
             Stopwatch sw = new Stopwatch();
 
             //Newton's Method
@@ -143,7 +153,7 @@ namespace IntegerPi
                 //bBreakExpr = quotient < _div;
                 //_remainder = _doubleOfQuotient - div - div;     // 
                 //bBreakExpr = quotient.Equals(div) || quotient.Equals(_doubleOfQuotient);
-
+                iterations++;
             } while (bBreakExpr);
             sw.Stop();
 #if DEBUG
@@ -153,31 +163,33 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSquareRoot:\n{quotient}\nElapsed time: {strElapsed}\n");
+            WriteLine($"\nSquareRoot:\n{quotient}\nElapsed time: {strElapsed}\nIterations: {iterations}\n\n");
 #endif
             return quotient;
         }   // SquareRoot
 
         public BigInteger Sqrt(BigInteger x)
         {
-            BigInteger div = BigInteger.One;
-            div = BigInteger.Add(div, BigInteger.One);
-            BigInteger TWO = new BigInteger(2);
-            BigInteger div2 = div, y;
+            int LogBase2 = (int)BigInteger.Log(x, 2);
+            BigInteger div = x >> (int)(LogBase2 >> 1);     // Guess by halving initial value's number of bits
+            //BigInteger div = BigInteger.One << 1;         // Old intial guess value
+            BigInteger y = x;
+            int iterations = 0;
             Stopwatch sw = new Stopwatch();
 
             // Loop until we hit the same value twice in a row, or wind
             // up alternating.
             sw.Start();
-            while (true)
+            bool bBreak = false;
+            while (!bBreak)
             {
                 y = BigInteger.Add(div, BigInteger.Divide(x, div));
                 y >>= 1;
-                if (y.Equals(div) || y.Equals(div2))
-                    break;
-                div2 = div;
+                bBreak = y.Equals(div);
+                //    break;
                 div = y;
-            }
+                iterations++;
+            } 
             sw.Stop();
 #if DEBUG
             string strElapsed;
@@ -186,7 +198,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSqrt:\n{y}\nElapsed time: {strElapsed}\n");
+            WriteLine($"\nSqrt:\n{y}\nElapsed time: {strElapsed}\nIterations: {iterations}\n\n");
 #endif
             return y;
         }   // Sqrt
@@ -203,22 +215,19 @@ namespace IntegerPi
                 return x;
             }
 
-            BigInteger TWO = new BigInteger(2L);
             BigInteger y;
             Stopwatch sw = new Stopwatch();
 
             // starting with y = x / 2 avoids magnitude issues with x squared
             sw.Start();
-            //for (y = BigInteger.Divide(x, TWO);
-            //     y.CompareTo(BigInteger.Divide(x, y)) > 0;
-            //     y = BigInteger.Divide(BigInteger.Add(BigInteger.Divide(x, y), y), TWO)) ;
-            for (y = x >> 1;
+            for (y = x >> ((int)BigInteger.Log(x, 2) >> 1);
                  y.CompareTo(BigInteger.Divide(x, y)) > 0;
-                 y = BigInteger.Add(BigInteger.Divide(x, y), y) >> 1) ;
+                 y = BigInteger.Add(BigInteger.Divide(x, y), y) >> 1) 
+                ;
             sw.Stop();
 #if DEBUG
             string strElapsed;
-            if (sw.ElapsedMilliseconds <= 1000)
+            if (sw.ElapsedMilliseconds < 1000)
                 strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
@@ -240,19 +249,20 @@ namespace IntegerPi
                 return x;
             }
 
-            BigInteger TWO = new BigInteger(2L);
             BigInteger y;
             Stopwatch sw = new Stopwatch();
+            var _TWO = BigInteger.One * 2;
 
             // starting with y = x / 2 avoids magnitude issues with x squared
             sw.Start();
-            for (y = BigInteger.Divide(x, TWO);
+            for (y = BigInteger.Divide(x, x >> ((int)BigInteger.Log(x, 2) >> 1) + 1);
                  y.CompareTo(BigInteger.Divide(x, y)) > 0;
-                 y = BigInteger.Divide(BigInteger.Add(BigInteger.Divide(x, y), y), TWO)) ;
+                 y = BigInteger.Divide(BigInteger.Add(BigInteger.Divide(x, y), y), _TWO))
+            { }
             sw.Stop();
 #if DEBUG
             string strElapsed;
-            if (sw.ElapsedMilliseconds <= 1000)
+            if (sw.ElapsedMilliseconds < 1000)
                 strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
@@ -262,7 +272,7 @@ namespace IntegerPi
 
             if (x.CompareTo(BigInteger.Multiply(y, y)) == 0)
             {
-                return y;
+                return y;       // perfect square
             }
             else
             {
@@ -361,7 +371,7 @@ namespace IntegerPi
         public BigInteger BBPFixed()
         {
             BigInteger sum = 0, term;
-            BigInteger _ONE = ONE;
+            BigInteger _ONE = ONE / BigInteger.Pow(10, (int)m_DIGITS);
             // Can this loop be parallelized?
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -688,12 +698,29 @@ namespace IntegerPi
             WriteLine("Sqrt({0}) =\n{1}\n", pf.TWO, pf.Sqrt(pf.TWO));
             WriteLine("SquareRootFloor({0}) =\n{1}\n", pf.TWO, pf.SquareRootFloor(pf.TWO));
             WriteLine("SquareRootCeil({0}) =\n{1}\n", pf.TWO, pf.SquareRootCeil(pf.TWO));
+
+            var sw = new Stopwatch();
+            sw.Start();
+            BigInteger sqrt2 = 0;
+            for (int i = 1; i <= 1000; i++)
+                sqrt2 = pf.SquareRoot(pf.ONE * i);
+            sw.Stop();
+            WriteLine("1000 runs of SquareRoot() took: {0:F1} s", sw.Elapsed.TotalSeconds);
+
+            Write("Press Enter: "); ReadLine();
+
+            sw.Restart();
+            for (int i = 1; i <= 1000; i++)
+                sqrt2 = pf.Sqrt(pf.ONE * i);
+            sw.Stop();
+            WriteLine("1000 runs of Sqrt() took: {0:F1} s", sw.Elapsed.TotalSeconds);
+
 #endif
 #if EXP
             WriteLine("ExpFixed =\n{0}\n", pf.ExpFixed());
 #endif
 #if LN
-            BigInteger sqrt2 = pf.SquareRoot(pf.TWO);
+            BigInteger sqrt2 = pf.Sqrt(pf.TWO);
             BigInteger biAGM = pf.BigIntAGM(pf.normalize(pf.ONE, sqrt2), sqrt2);
             WriteLine("BigIntAGM(1, √2) =\n{0}\n", biAGM);
             WriteLine("Gauss's constant =\n{0}\n", pf.ONE / biAGM);
@@ -714,16 +741,14 @@ namespace IntegerPi
 #if RAMANUJAN
             // 12 terms accurate to 103 d.p.
             // 6 req. for default prec to 53 d.p.
-            string strPI = pf.RamanujanFixed().ToString();
-            strPI = strPI.Insert(1, ".");
+            string strPI = pf.RamanujanFixed().ToString().Insert(1, ".");
             WriteLine("Ramanujan series π:\n{0}\n\n", strPI);         // 43 terms accurate to 309 d.p. + rounding error
-                                                                                        // 49 terms accurate to 397 d.p.
-                                                                                        // 125 terms  accurate to 1002 d.p.
+                                                                      // 49 terms accurate to 397 d.p.
+                                                                      // 125 terms  accurate to 1002 d.p.
 #endif
 #if BBP
             // 256 terms accurate to 309 d.p. 
-            string strPI = pf.BBPFixed().ToString();
-            strPI = strPI.Insert(1, ".");
+            string strPI = pf.BBPFixed().ToString()Insert(1, ".");
             WriteLine("BBP series π:\n{0}\n\n", strPI);
 #endif
 #if ZETA
