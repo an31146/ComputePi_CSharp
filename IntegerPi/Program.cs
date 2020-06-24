@@ -330,22 +330,24 @@ namespace IntegerPi
 
         public BigInteger RamanujanFixed()
         {
-            BigInteger term = _ONE * 1103;
-            BigInteger sum = term, fact = 1;
-            int j = 1;
+            BigInteger term1 = _ONE * 1103, a2 = _ONE * 26390, a3 = a2;
+            BigInteger sum = term1, term = term1, fact = 1, fact4 = 1;
+            //int j = 1, k = 1103;
 
-            // Can this loop be parallelized?
+            // Can this loop be parallelized?  No, not if the successive term now depends on the current one
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            for (uint i = 1; i <= m_DIGITS / 8; i++)            // each term adds ~10 d.p. decreases with higher digits
+            for (int i = 1; !term.IsZero; i++)            // each term adds ~10 d.p. decreases with higher digits
             {
-                term = Factorial(4 * i);
-                term *= _ONE * (1103 + 26390 * i);
-                //term2 += term2;
+                for (int j = (i - 1) * 4 + 1; j <= 4 * i; j++)
+                    fact4 *= j;
+                //term = Factorial(4 * i);
+                //term *= _ONE * (1103 + 26390 * i);
+                term = fact4 * (term1 + a3);
+                a3 += a2;
                 fact *= i;
                 term /= BigInteger.Pow(fact, 4);
-                term /= BigInteger.Pow(396, 4 * (int)i);
-                //term3 *= term3 * term3;
+                term /= BigInteger.Pow(396, 4 * i);
                 sum += term;
             }
             BigInteger one_over_pi = 2 * SquareRootCeil(TWO) / 9801 * sum / _ONE;
@@ -367,16 +369,19 @@ namespace IntegerPi
 
         public BigInteger BBPFixed()
         {
-            BigInteger sum = 0, term;
+            BigInteger sum = 0, term = 1;
+            BigInteger _FOUR = _ONE << 2;
+            BigInteger _TWO = _ONE << 1;
             // Can this loop be parallelized?
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            for (int i = 0; i <= m_DIGITS; i++)                           // each term adds ~10 d.p.
+            for (int i = 0; !term.IsZero; i++)      // each term adds ~10 d.p. repeat until nothing to add, i.e. zero
             {
-                term = (ONE << 2) / (8 * i + 1);
-                term -= (ONE << 1) / (8 * i + 4);
-                term -= ONE / (8 * i + 5);
-                term -= ONE / (8 * i + 6);
+                int j = 8 * i;
+                term = _FOUR / (j + 1);
+                term -= _TWO / (j + 4);
+                term -= _ONE / (j + 5);
+                term -= _ONE / (j + 6);
 
                 term >>= (i << 2);
                 sum += term;
@@ -389,8 +394,8 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nElapsed time: {strElapsed}\n");
             WriteLine($"Sum of terms:\n{sum}\n");
+            WriteLine($"\nElapsed time: {strElapsed}\n");
 #endif
             return sum;
         }
@@ -744,7 +749,7 @@ namespace IntegerPi
 #endif
 #if BBP
             // 256 terms accurate to 309 d.p. 
-            string strPI = pf.BBPFixed().ToString()Insert(1, ".");
+            string strPI = pf.BBPFixed().ToString().Insert(1, ".");
             WriteLine("BBP series π:\n{0}\n\n", strPI);
 #endif
 #if ZETA
