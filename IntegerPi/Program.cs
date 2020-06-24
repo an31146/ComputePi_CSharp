@@ -22,10 +22,11 @@ namespace IntegerPi
 {
     class PiFunctions
     {
-        uint m_STEPS;
-        uint m_DIGITS;
-        public BigInteger ONE => normalize(1, m_DIGITS);
-        public BigInteger TWO => normalize(2, m_DIGITS);
+        uint m_STEPS, m_DIGITS;
+        BigInteger m_ONE, m_TWO;
+        public BigInteger ONE => m_ONE;         // double digits precision
+        public BigInteger _ONE;
+        public BigInteger TWO => m_TWO;
 
         public uint STEPS
         {
@@ -39,10 +40,13 @@ namespace IntegerPi
             set { m_DIGITS = value; }
         }
 
-        public PiFunctions(uint STEPS = 10000000, uint DIGITS = 53)
+        public PiFunctions(uint STEPS = 1000000, uint DIGITS = 53)
         {
             m_STEPS = STEPS;
             m_DIGITS = DIGITS;
+            m_ONE = normalize(1, m_DIGITS);
+            m_TWO = normalize(2, m_DIGITS);
+            _ONE = BigInteger.Pow(10, (int)m_DIGITS);
         }
 
         /*
@@ -74,18 +78,17 @@ namespace IntegerPi
 
         public BigInteger LN2Fixed()
         {
-            uint digits = m_DIGITS;
-            uint N = (uint)(digits * 1.1); 
-            BigInteger one_third = normalize(1, digits + 4 >> 1) / 3;
+            uint iterations = (uint)(m_DIGITS * 1.1); 
+            BigInteger one_third = _ONE / 3;
             BigInteger sum = one_third;
 
-            for (uint n = 1; n < N; n++)    // How many iterations do we need to obtain desired precision?
+            for (uint n = 1; n < iterations; n++)    // How many iterations do we need to obtain desired precision?
             {
                 one_third /= 9;
                 sum += one_third / (2 * n + 1);
             }
-            sum /= 1000;                    // truncate last few digits due to rounding
-            return (sum << 1);              // multiply by 2
+            sum = normalize(sum, _ONE / 10);         // truncate last few digits due to rounding
+            return (sum << 1);                       // multiply by 2
         }
 
         // Assumes parameters are already normalized fixed-point to {m_DIGITS} places
@@ -104,29 +107,26 @@ namespace IntegerPi
         public BigInteger BigIntLogN(BigInteger n)
         {
             // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/operators/
-            int N = (int)(m_DIGITS * Math.Log(10, 2));
-            BigInteger N1 = 4 * ONE / (n << N);
-            BigInteger agm = BigIntAGM(ONE, N1) << 1;
+            int N = (int)(m_DIGITS * Math.Log(10, 2)) >> 1;          // if using default precision, N1 = 0
+            BigInteger N1 = 4 * _ONE / (n << N);                     // but if using double-precision ONE, PI division / agm loses precision
+            BigInteger agm = BigIntAGM(_ONE, N1) << 1;
             
-            uint tmpDIGITS = m_DIGITS; DIGITS = (uint)N;
             BigInteger PI = BBPFixed();               // substitute with higher precision to calculate without halving m_DIGITS
-            DIGITS = tmpDIGITS;
 
-            //int one_len = ONE.ToString().Length;
-            int pi_len = PI.ToString().Length;
-            int agm_len = agm.ToString().Length;             // OMG! Sooo complicated...
-            int agm2_len = agm_len - (agm_len - pi_len >> 1);       // when using RamanujanFixed()
+            //int pi_len = PI.ToString().Length;
+            //int agm_len = agm.ToString().Length;             // OMG! Sooo complicated...
+            //int agm2_len = agm_len - (agm_len - pi_len >> 1);       // when using RamanujanFixed()
             
-            agm /= BigInteger.Pow(10, agm_len - (agm_len >> 1));          // using BBPFixed() - broken it again...
-            int agm3_len = agm.ToString().Length;
-            BigInteger LogN = PI / agm;
-            int logN_len = LogN.ToString().Length;
-            LogN /= BigInteger.Pow(10, logN_len >> 1);
-            BigInteger c = LN2Fixed() * N;
-            int ln2_len = c.ToString().Length;
-            LogN = normalize(LogN, c);
-            LogN -= c;
-            return LogN;                                    // truncate trailing ? digits due to rounding error
+            //agm /= BigInteger.Pow(10, agm_len >> 1);          // using BBPFixed() - broken it again...
+            //int agm3_len = agm.ToString().Length;
+            BigInteger LogN = PI / agm;                         // this division causes loss of precision by half ~{m_DIGITS/2)
+            //int logN_len = LogN.ToString().Length;
+            //LogN /= BigInteger.Pow(10, logN_len >> 1);
+            BigInteger ln2 = LN2Fixed() * N;
+            //int ln2_len = ln2.ToString().Length;
+            //LogN = normalize(LogN, c);
+            LogN -= ln2;
+            return LogN;               // truncate trailing ? digits due to rounding error
         }
 
         public BigInteger SquareRoot(BigInteger n)
@@ -271,13 +271,10 @@ namespace IntegerPi
 #endif
 
             if (x.CompareTo(BigInteger.Multiply(y, y)) == 0)
-            {
                 return y;       // perfect square
-            }
             else
-            {
                 return BigInteger.Add(y, BigInteger.One);
-            }
+
         }   // SquareRootCeil
 
         // http://rosettacode.org/wiki/Integer_roots#C.23
@@ -333,54 +330,53 @@ namespace IntegerPi
 
         public BigInteger RamanujanFixed()
         {
-            BigInteger sqrtTwo = SquareRoot(TWO);
-            BigInteger sum = 0;
+            BigInteger term = _ONE * 1103;
+            BigInteger sum = term, fact = 1;
+            int j = 1;
 
             // Can this loop be parallelized?
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            for (uint i = 0; i <= m_DIGITS / 8; i++)                           // each term adds ~10 d.p.
+            for (uint i = 1; i <= m_DIGITS / 8; i++)            // each term adds ~10 d.p. decreases with higher digits
             {
-                uint j = i << 2;
-                BigInteger term = ONE * (1103 + (26390 * i));
-                term *= Factorial(j);
-                term /= BigInteger.Pow(Factorial(i), 4);
-                term /= BigInteger.Pow(396, (int)j);
+                term = Factorial(4 * i);
+                term *= _ONE * (1103 + 26390 * i);
+                //term2 += term2;
+                fact *= i;
+                term /= BigInteger.Pow(fact, 4);
+                term /= BigInteger.Pow(396, 4 * (int)i);
+                //term3 *= term3 * term3;
                 sum += term;
             }
-            BigInteger mult = TWO * sqrtTwo / normalize(9801, m_DIGITS);
-            sum *= mult;
-            //BigInteger reciprocal = normalize(1, (uint)sum.ToString().Length + 1) / sum;
-            BigInteger reciprocal = ONE * ONE /  sum;
+            BigInteger one_over_pi = 2 * SquareRootCeil(TWO) / 9801 * sum / _ONE;
             sw.Stop();
 
 #if DEBUG
             WriteLine($"Sum of terms:\n{sum}\n");
-            WriteLine($"1 / π:\n{reciprocal}\n");
+            WriteLine($"1 / π:\n{one_over_pi}\n");
             string strElapsed;
             if (sw.ElapsedMilliseconds <= 1000)
                 strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nRamanujan Multiplier:\n{mult}\nElapsed time: {strElapsed}\n");
+            WriteLine($"\nElapsed time: {strElapsed}\n");
 #endif
-            return reciprocal;           // Truncate last few digits for accuracy
+            return ONE / one_over_pi;           // Truncate last few digits for accuracy?
         }
 
         public BigInteger BBPFixed()
         {
             BigInteger sum = 0, term;
-            BigInteger _ONE = ONE / BigInteger.Pow(10, (int)m_DIGITS);
             // Can this loop be parallelized?
             Stopwatch sw = new Stopwatch();
             sw.Start();
             for (int i = 0; i <= m_DIGITS; i++)                           // each term adds ~10 d.p.
             {
-                term = (_ONE << 2) / (8 * i + 1);
-                term -= (_ONE << 1) / (8 * i + 4);
-                term -= _ONE / (8 * i + 5);
-                term -= _ONE / (8 * i + 6);
+                term = (ONE << 2) / (8 * i + 1);
+                term -= (ONE << 1) / (8 * i + 4);
+                term -= ONE / (8 * i + 5);
+                term -= ONE / (8 * i + 6);
 
                 term >>= (i << 2);
                 sum += term;
@@ -437,7 +433,6 @@ namespace IntegerPi
 
         public BigInteger SlowHarmonicSeries()
         {
-            BigInteger _ONE = ONE / BigInteger.Pow(10, (int)m_DIGITS);
             BigInteger sum = 0;
 
             for (BigInteger n = 1; n <= BigInteger.Pow(10, (int)m_DIGITS); n++)
@@ -517,23 +512,22 @@ namespace IntegerPi
         // 17/06/20 - new normalize function to make # of decimal places to {digits}
         public BigInteger normalize(uint n, uint digits)
         {
-            _ = new BigInteger(n);
-            string str_n = n.ToString() + new String('0', (int)digits * 2);
-            return BigInteger.Parse(str_n);
+            return BigInteger.Pow(10, (int)digits * 2) * n;
+            //string str_n = n.ToString() + new String('0', (int)digits * 2);
+            //return BigInteger.Parse(str_n);               // expensive operation!
         }
 
         // return normalized argument A as the same as B
         public BigInteger normalize(BigInteger A, BigInteger B)
         {
-            int strLenA = A.ToString().Length;
-            int strLenB = B.ToString().Length;
+            int strLenA = (int)BigInteger.Log10(A);
+            int strLenB = (int)BigInteger.Log10(B);
             int newlen = Math.Min(strLenA, strLenB);
-            string strA = A.ToString();
 
             if (strLenA > newlen)
-                return BigInteger.Parse(strA.Substring(0, newlen));
+                return A / BigInteger.Pow(10, strLenA - newlen);
             else
-                return BigInteger.Parse(strA + new String('0', strLenB - strLenA));
+                return A * BigInteger.Pow(10, strLenB - strLenA);
         }
 
         public BigInteger BigIntZeta(uint s)    // must be +ve integer > 1
@@ -667,15 +661,17 @@ namespace IntegerPi
         static void Main(string[] args)
         {
             PiFunctions pf = new PiFunctions();
-
             if (args.Length >= 1)
             {
                 pf.STEPS = UInt32.Parse(args[0]);
+
+                if (args.Length == 2)
+                {
+                    pf.DIGITS = UInt32.Parse(args[1]);
+                }
+                pf = new PiFunctions(pf.STEPS, pf.DIGITS);
             }
-            if (args.Length == 2)
-            {
-                pf.DIGITS = UInt32.Parse(args[1]);
-            }
+
 #if FLOAT
 #if DEBUG
             double pi_squared_over_six = pf.zeta_of_two_double();
@@ -694,10 +690,10 @@ namespace IntegerPi
 
 #if DEBUG
 #if SQRT
-            WriteLine("SquareRoot({0}) =\n{1}\n", pf.TWO, pf.SquareRoot(pf.TWO));
-            WriteLine("Sqrt({0}) =\n{1}\n", pf.TWO, pf.Sqrt(pf.TWO));
-            WriteLine("SquareRootFloor({0}) =\n{1}\n", pf.TWO, pf.SquareRootFloor(pf.TWO));
-            WriteLine("SquareRootCeil({0}) =\n{1}\n", pf.TWO, pf.SquareRootCeil(pf.TWO));
+            WriteLine("SquareRoot({0}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRoot(pf.TWO));
+            WriteLine("Sqrt({0}) =\n{1}\n", pf.TWO.GetHashCode(), pf.Sqrt(pf.TWO));
+            WriteLine("SquareRootFloor({0}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootFloor(pf.TWO));
+            WriteLine("SquareRootCeil({0}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootCeil(pf.TWO));
 
             var sw = new Stopwatch();
             sw.Start();
@@ -718,6 +714,7 @@ namespace IntegerPi
 #endif
 #if EXP
             WriteLine("ExpFixed =\n{0}\n", pf.ExpFixed());
+            WriteLine("LN2Fixed =\n{0}\n", pf.LN2Fixed());
 #endif
 #if LN
             BigInteger sqrt2 = pf.Sqrt(pf.TWO);
@@ -725,7 +722,6 @@ namespace IntegerPi
             WriteLine("BigIntAGM(1, √2) =\n{0}\n", biAGM);
             WriteLine("Gauss's constant =\n{0}\n", pf.ONE / biAGM);
 
-            WriteLine("LN2Fixed =\n{0}\n", pf.LN2Fixed());
             for (long pow_of_ten = 10; pow_of_ten <= 10000; pow_of_ten *= 10)
             {
                 WriteLine("BigIntLogN({0}) =\n{1}\n", pow_of_ten, pf.BigIntLogN(pow_of_ten));
@@ -762,10 +758,15 @@ namespace IntegerPi
 #endif
 #else
 #if SQRT
-            WriteLine("SquareRoot({0}) =\n{1}\n", pf.TWO, pf.TimeThis("SquareRoot(pf.TWO)", () => pf.SquareRoot(pf.TWO)));
-            WriteLine("Sqrt({0}) =\n{1}\n", pf.TWO, pf.TimeThis("Sqrt(pf.TWO)", () => pf.Sqrt(pf.TWO)));
-            WriteLine("SquareRootFloor({0}) =\n{1}\n", pf.TWO, pf.TimeThis("SquareRootFloor(pf.TWO)", () => pf.SquareRootFloor(pf.TWO)));
-            WriteLine("SquareRootCeil({0}) =\n{1}\n", pf.TWO, pf.TimeThis("SquareRootCeil(pf.TWO)", () => pf.SquareRootCeil(pf.TWO)));
+            WriteLine("SquareRoot(pf.TWO.GetHashCode() = {0:x}) =\n{1}\n", pf.TWO.GetHashCode(), 
+                                                    pf.TimeThis("SquareRoot(pf.TWO)", () => pf.SquareRoot(pf.TWO)));
+            WriteLine("Sqrt(pf.TWO.GetHashCode() = {0:x}) =\n{1}\n", 
+                                                    pf.TWO.GetHashCode(), pf.TimeThis("Sqrt(pf.TWO)", () => pf.Sqrt(pf.TWO)));
+            WriteLine("SquareRootFloor(pf.TWO.GetHashCode() = {0:x}) =\n{1}\n", pf.TWO.GetHashCode(), 
+                                                    pf.TimeThis("SquareRootFloor(pf.TWO)", () => pf.SquareRootFloor(pf.TWO)));
+            WriteLine("SquareRootCeil(pf.TWO.GetHashCode() = {0:x}) =\n{1}\n", 
+                                                    pf.TWO.GetHashCode(), 
+                                                    pf.TimeThis("SquareRootCeil(pf.TWO)", () => pf.SquareRootCeil(pf.TWO)));
 #endif
 #if FACT
             WriteLine("Factorial({0}) = \n{1}\n", 100, pf.TimeThis("Factorial(100)", () => pf.Factorial(100)));
@@ -774,7 +775,8 @@ namespace IntegerPi
 
 #if ZETA
             BigInteger BigInt_pi_squared_over_six = pf.TimeThis("zeta_of_two_bigint()", () => pf.zeta_of_two_bigint());
-            BigInteger BigInt_pi = pf.TimeThis("SquareRoot(BigInt_pi_squared_over_six * 6)", () => pf.SquareRoot(BigInt_pi_squared_over_six * 6));
+            BigInteger BigInt_pi =  pf.TimeThis("SquareRoot(BigInt_pi_squared_over_six * 6)", () => 
+                                    pf.SquareRoot(BigInt_pi_squared_over_six * 6));
             WriteLine("BigInt_pi²/6: {0}\n\n√(BigInt_pi²): {1}\n\n", BigInt_pi_squared_over_six, BigInt_pi);
 
             BigInteger BigInt_pi_to_fourth_over_ninety = pf.TimeThis("zeta_of_four_bigint()", () => pf.zeta_of_four_bigint());
@@ -782,7 +784,10 @@ namespace IntegerPi
                                      pf.SquareRoot(pf.SquareRoot(BigInt_pi_to_fourth_over_ninety * 90)) );
 #endif
 #if RAMANUJAN
-            WriteLine("Ramanujan series π:\n {0}\n\n", pf.TimeThis("RamanujanFixed()", () => pf.RamanujanFixed().ToString().Insert(1, ".")));
+            // 19728 digits 655.7 s
+            WriteLine("Ramanujan series π:\n {0}\n\n", 
+                pf.TimeThis("RamanujanFixed()", () => 
+                pf.RamanujanFixed().ToString().Insert(1, ".")));
 #endif
 #if BBP
             // 256 terms accurate to 309 d.p. 
