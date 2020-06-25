@@ -332,14 +332,12 @@ namespace IntegerPi
             for (int i = 1; !term.IsZero; i++)            // each term adds ~10 d.p. decreases with higher digits
             {
                 for (int j = (i - 1) * 4 + 1; j <= 4 * i; j++)
-                    fact4 *= j;
-                //term = Factorial(4 * i);
-                //term *= _ONE * (1103 + 26390 * i);
-                term = fact4 * (term1 + a3);
-                a3 += a2;
-                fact *= i;
-                term /= BigInteger.Pow(fact, 4);
-                term /= BigInteger.Pow(396, 4 * i);
+                    fact4 *= j;                             // (4*i)!
+                term = fact4 * (term1 + a3);                // (4*i)! * (1103 + 26390*i)
+                a3 += a2;                                   // a3 = 26390 * i
+                fact *= i;                                  // i!
+                term /= BigInteger.Pow(fact, 4);            // (i!)^4
+                term /= BigInteger.Pow(396, 4 * i);         // 394^(4*i)
                 sum += term;
             }
             BigInteger one_over_pi = 2 * SquareRootCeil(TWO) / 9801 * sum / _ONE;
@@ -367,15 +365,15 @@ namespace IntegerPi
             Stopwatch sw = new Stopwatch();
             bool bQuit = false;
             sw.Start();
-            for (long i = 1; !bQuit; i++)      // each term adds ~10 d.p. repeat until nothing to add, i.e. zero
+            long i = 1;
+            for (; !bQuit; i++)      // each term adds ~10 d.p. repeat until nothing to add, i.e. zero
             {
                 top = 47; bottom = 15;
                 long k = i * i;
                 top += 120 * k + 151 * i;
                 top *= _ONE;
                 bottom += 712 * k + 194 * i;
-                bottom += (new BigInteger(k * k) << 9) + (new BigInteger(k * i) << 10);
-                //bottom *= _ONE;
+                bottom += new BigInteger(k << 9) * k + new BigInteger(k << 10) * i;     // <!-- overflows for 32-bit int and 64-bit long -->
                 
                 BigInteger term = top / bottom;
                 term >>= (int)(i << 2);
@@ -391,7 +389,7 @@ namespace IntegerPi
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
             WriteLine($"Sum of terms:\n{sum}\n");
-            WriteLine($"\nElapsed time: {strElapsed}\n");
+            WriteLine($"\n{i - 1} iterations took: {strElapsed}\n");
 #endif
             return sum;
         }
@@ -787,7 +785,7 @@ namespace IntegerPi
             // 256 terms accurate to 309 d.p. 
             // 19728 digits ~2.2s for BBPFixed() v1 / ~1.2s for BBPFixed() v2
             // 39467 digits ~8.0s for BBPFixed() v1 / ~4.7s for BBPFixed() v2
-            // 315655 digits ~613.7 s for BBPFixed() v1 / ~329.1 s for BBPFixed() v2
+            // 315655 digits ~613.7 s for BBPFixed() v1 / ~357.6 s for BBPFixed() v2
             string strPI = pf.BBPFixed().ToString().Insert(1, ".");
             WriteLine("BBP series π:\n{0}\n\n", strPI);
 #endif
