@@ -107,11 +107,13 @@ namespace IntegerPi
         public BigInteger BigIntLogN(BigInteger n)
         {
             // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/operators/
-            int N = (int)(m_DIGITS * Math.Log(10, 2)) >> 1;          // if using default precision, N1 = 0
-            BigInteger N1 = 4 * _ONE / (n << N);                     // but if using double-precision ONE, PI division / agm loses precision
+            int N = (int)(m_DIGITS * Math.Log(10, 2)) >> 1;     // if using desired number of digits by not shifting, N1 will = 0
+            BigInteger N1 = 4 * _ONE / (n << N);                // but if using double the precision of ONE, PI division / agm loses precision
             BigInteger agm = BigIntAGM(_ONE, N1) << 1;
-            
+
             BigInteger PI = BBPFixed();               // substitute with higher precision to calculate without halving m_DIGITS
+                //RamanujanFixed();
+            PI *= _ONE;     // compensate precision for division by agm
 
             //int pi_len = PI.ToString().Length;
             //int agm_len = agm.ToString().Length;             // OMG! Sooo complicated...
@@ -126,7 +128,7 @@ namespace IntegerPi
             //int ln2_len = ln2.ToString().Length;
             //LogN = normalize(LogN, c);
             LogN -= ln2;
-            return LogN;               // truncate trailing ? digits due to rounding error
+            return normalize(LogN, _ONE);               // truncate trailing ? digits due to rounding error
         }
 
         public BigInteger SquareRoot(BigInteger n)
@@ -367,6 +369,45 @@ namespace IntegerPi
             return ONE / one_over_pi;           // Truncate last few digits for accuracy?
         }
 
+#if BBPv2
+        public BigInteger BBPFixed()
+        {
+            BigInteger top = _ONE * 47, bottom = 15;
+            BigInteger sum = top / bottom;
+            Stopwatch sw = new Stopwatch();
+            bool bQuit = false;
+            sw.Start();
+            for (long i = 1; !bQuit; i++)      // each term adds ~10 d.p. repeat until nothing to add, i.e. zero
+            {
+                top = 47; bottom = 15;
+                long k = i * i;
+                top += 120 * k + 151 * i;
+                top *= _ONE;
+                bottom += 712 * k + 194 * i;
+                bottom += (k * k << 9) + (k * i << 10);
+                //bottom *= _ONE;
+                
+                BigInteger term = top / bottom;
+                term >>= (int)(i << 2);
+                bQuit = term.IsZero;
+                sum += term;
+            }
+            sw.Stop();
+#if DEBUG
+            string strElapsed;
+            if (sw.ElapsedMilliseconds <= 1000)
+                strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
+            else
+                strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
+
+            WriteLine($"Sum of terms:\n{sum}\n");
+            WriteLine($"\nElapsed time: {strElapsed}\n");
+#endif
+            return sum;
+        }
+#endif
+
+#if BBP
         public BigInteger BBPFixed()
         {
             BigInteger sum = 0, term = 1;
@@ -399,11 +440,11 @@ namespace IntegerPi
 #endif
             return sum;
         }
-
+#endif
         public double SlowHarmonicSeries(long N)
         {
             double sum = 0, term;
-            // Can this loop be parallelized?  Yes, but it doesn't work.
+            // Can this loop be parallelized?  Yes, but it doesn't work very well.
             Stopwatch sw = new Stopwatch();
             object Monitor = new object();
             sw.Start();
@@ -495,7 +536,7 @@ namespace IntegerPi
             return sum;
         }
 
-        public BigInteger normalize_old(uint n, uint digits)
+        private BigInteger normalize_old(uint n, uint digits)
         {
             BigInteger ret_val = new BigInteger(n);
             BigInteger exponent = 100;
@@ -515,7 +556,7 @@ namespace IntegerPi
         }
 
         // 17/06/20 - new normalize function to make # of decimal places to {digits}
-        public BigInteger normalize(uint n, uint digits)
+        private BigInteger normalize(uint n, uint digits)
         {
             return BigInteger.Pow(10, (int)digits * 2) * n;
             //string str_n = n.ToString() + new String('0', (int)digits * 2);
@@ -523,16 +564,16 @@ namespace IntegerPi
         }
 
         // return normalized argument A as the same as B
-        public BigInteger normalize(BigInteger A, BigInteger B)
+        private BigInteger normalize(BigInteger A, BigInteger B)
         {
-            int strLenA = (int)BigInteger.Log10(A);
-            int strLenB = (int)BigInteger.Log10(B);
-            int newlen = Math.Min(strLenA, strLenB);
+            int Log10_A = (int)BigInteger.Log10(A);
+            int Log10_B = (int)BigInteger.Log10(B);
+            int newlen = Math.Min(Log10_A, Log10_B);
 
-            if (strLenA > newlen)
-                return A / BigInteger.Pow(10, strLenA - newlen);
+            if (Log10_A > newlen)
+                return A / BigInteger.Pow(10, Log10_A - newlen);
             else
-                return A * BigInteger.Pow(10, strLenB - strLenA);
+                return A * BigInteger.Pow(10, Log10_B - Log10_A);
         }
 
         public BigInteger BigIntZeta(uint s)    // must be +ve integer > 1
@@ -717,16 +758,17 @@ namespace IntegerPi
             WriteLine("1000 runs of Sqrt() took: {0:F1} s", sw.Elapsed.TotalSeconds);
 
 #endif
-#if EXP
+#if EXP || AGM
             WriteLine("ExpFixed =\n{0}\n", pf.ExpFixed());
             WriteLine("LN2Fixed =\n{0}\n", pf.LN2Fixed());
-#endif
-#if LN
+
             BigInteger sqrt2 = pf.Sqrt(pf.TWO);
             BigInteger biAGM = pf.BigIntAGM(pf.normalize(pf.ONE, sqrt2), sqrt2);
             WriteLine("BigIntAGM(1, √2) =\n{0}\n", biAGM);
             WriteLine("Gauss's constant =\n{0}\n", pf.ONE / biAGM);
+#endif
 
+#if LN
             for (long pow_of_ten = 10; pow_of_ten <= 10000; pow_of_ten *= 10)
             {
                 WriteLine("BigIntLogN({0}) =\n{1}\n", pow_of_ten, pf.BigIntLogN(pow_of_ten));
@@ -740,15 +782,22 @@ namespace IntegerPi
             WriteLine("Factorial({0}) = \n{1}\n", 100, pf.Factorial(100));
 #endif
 #if RAMANUJAN
-            // 12 terms accurate to 103 d.p.
-            // 6 req. for default prec to 53 d.p.
+            /*
+             * Timings are WITHOUT attaching the debugger AND breakpoints disabled!
+             * 12 terms accurate to 103 d.p.
+             * 6 req. for default prec to 53 d.p.
+             * 19728 digits ~69.5 s
+             */
             string strPI = pf.RamanujanFixed().ToString().Insert(1, ".");
             WriteLine("Ramanujan series π:\n{0}\n\n", strPI);         // 43 terms accurate to 309 d.p. + rounding error
                                                                       // 49 terms accurate to 397 d.p.
                                                                       // 125 terms  accurate to 1002 d.p.
 #endif
-#if BBP
+#if BBP || BBPv2
             // 256 terms accurate to 309 d.p. 
+            // 19728 digits ~2.2s for BBPFixed() v1 / ~1.2s for BBPFixed() v2
+            // 39467 digits ~8.0s for BBPFixed() v1 / ~4.7s for BBPFixed() v2
+            // 315655 digits ~613.7 s for BBPFixed() v1 / ~329.1 s for BBPFixed() v2
             string strPI = pf.BBPFixed().ToString().Insert(1, ".");
             WriteLine("BBP series π:\n{0}\n\n", strPI);
 #endif
@@ -789,7 +838,7 @@ namespace IntegerPi
                                      pf.SquareRoot(pf.SquareRoot(BigInt_pi_to_fourth_over_ninety * 90)) );
 #endif
 #if RAMANUJAN
-            // 19728 digits 655.7 s
+            // 19728 digits ~75.7 s
             WriteLine("Ramanujan series π:\n {0}\n\n", 
                 pf.TimeThis("RamanujanFixed()", () => 
                 pf.RamanujanFixed().ToString().Insert(1, ".")));
