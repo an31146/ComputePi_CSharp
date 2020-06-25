@@ -111,22 +111,12 @@ namespace IntegerPi
             BigInteger N1 = 4 * _ONE / (n << N);                // but if using double the precision of ONE, PI division / agm loses precision
             BigInteger agm = BigIntAGM(_ONE, N1) << 1;
 
-            BigInteger PI = BBPFixed();               // substitute with higher precision to calculate without halving m_DIGITS
+            BigInteger PI = BBPFixed();             // substitute with higher precision to calculate without halving m_DIGITS
                 //RamanujanFixed();
-            PI *= _ONE;     // compensate precision for division by agm
+            PI *= _ONE;                             // compensate precision for division by agm
 
-            //int pi_len = PI.ToString().Length;
-            //int agm_len = agm.ToString().Length;             // OMG! Sooo complicated...
-            //int agm2_len = agm_len - (agm_len - pi_len >> 1);       // when using RamanujanFixed()
-            
-            //agm /= BigInteger.Pow(10, agm_len >> 1);          // using BBPFixed() - broken it again...
-            //int agm3_len = agm.ToString().Length;
-            BigInteger LogN = PI / agm;                         // this division causes loss of precision by half ~{m_DIGITS/2)
-            //int logN_len = LogN.ToString().Length;
-            //LogN /= BigInteger.Pow(10, logN_len >> 1);
+            BigInteger LogN = PI / agm;             // this division causes loss of precision by half ~{m_DIGITS/2)
             BigInteger ln2 = LN2Fixed() * N;
-            //int ln2_len = ln2.ToString().Length;
-            //LogN = normalize(LogN, c);
             LogN -= ln2;
             return normalize(LogN, _ONE);               // truncate trailing ? digits due to rounding error
         }
@@ -384,7 +374,7 @@ namespace IntegerPi
                 top += 120 * k + 151 * i;
                 top *= _ONE;
                 bottom += 712 * k + 194 * i;
-                bottom += (k * k << 9) + (k * i << 10);
+                bottom += (new BigInteger(k * k) << 9) + (new BigInteger(k * i) << 10);
                 //bottom *= _ONE;
                 
                 BigInteger term = top / bottom;
