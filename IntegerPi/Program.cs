@@ -73,21 +73,24 @@ namespace IntegerPi
             Tuple<BigInteger, BigInteger> p = BinarySplit(0, N);
 
             //int len = Math.Max(p.Item1.ToString().Length, p.Item2.ToString().Length);
-            return (p.Item1 + p.Item2) * normalize(1, digits >> 1) / p.Item2; 
+            return (p.Item1 + p.Item2) * _ONE / p.Item2; 
         }
 
         public BigInteger LN2Fixed()
         {
-            uint iterations = (uint)(m_DIGITS * 1.1); 
+            //uint iterations = (uint)(m_DIGITS * 1.1); 
             BigInteger one_third = _ONE / 3;
-            BigInteger sum = one_third;
+            BigInteger sum = one_third, term = sum;
 
-            for (uint n = 1; n < iterations; n++)    // How many iterations do we need to obtain desired precision?
+            for (uint n = 1; !term.IsZero; n++)    // How many iterations do we need to obtain desired precision?
             {
                 one_third /= 9;
-                sum += one_third / (2 * n + 1);
+                term = one_third / (2 * n + 1);
+                if (term.IsZero)
+                    break;
+                sum += term;
             }
-            sum = normalize(sum, _ONE / 10);         // truncate last few digits due to rounding
+            //sum = normalize(sum, _ONE / 10);         // truncate last few digits due to rounding
             return (sum << 1);                       // multiply by 2
         }
 
@@ -118,7 +121,8 @@ namespace IntegerPi
             BigInteger LogN = PI / agm;             // this division causes loss of precision by half ~{m_DIGITS/2)
             BigInteger ln2 = LN2Fixed() * N;
             LogN -= ln2;
-            return normalize(LogN, _ONE);               // truncate trailing ? digits due to rounding error
+            LogN /= BigInteger.Pow(10, (int)m_DIGITS >> 1);    // truncate trailing ? digits due to rounding error
+            return LogN;
         }
 
         public BigInteger SquareRoot(BigInteger n)
@@ -155,7 +159,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSquareRoot:\n{quotient}\nElapsed time: {strElapsed}\nIterations: {iterations}\n\n");
+            WriteLine($"\nSquareRoot() elapsed time: {strElapsed}\nIterations: {iterations}\n\n");
 #endif
             return quotient;
         }   // SquareRoot
@@ -190,7 +194,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSqrt:\n{y}\nElapsed time: {strElapsed}\nIterations: {iterations}\n\n");
+            WriteLine($"\nSqrt() elapsed time: {strElapsed}\nIterations: {iterations}\n\n");
 #endif
             return y;
         }   // Sqrt
@@ -224,7 +228,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSquareRootFloor:\n{y}\nElapsed time: {strElapsed}\n");
+            WriteLine($"\nSquareRootFloor() elapsed time: {strElapsed}\n");
 #endif
             return y;
         }   // SquareRootFloor
@@ -259,7 +263,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSquareRootCeil:\n{y}\nElapsed time: {strElapsed}\n");
+            WriteLine($"\nSquareRootCeil() elapsed time: {strElapsed}\n");
 #endif
 
             if (x.CompareTo(BigInteger.Multiply(y, y)) == 0)
@@ -298,15 +302,14 @@ namespace IntegerPi
         
         public BigInteger Factorial(uint n)
         {
-            BigInteger ONE = 1;
-            BigInteger factorial = ONE;
+            BigInteger fact = 1;
             Stopwatch sw = new Stopwatch();
 
             sw.Start();
             if (n <= 1)
-                return ONE;
+                return 1;
             for (uint i = 2; i <= n; i++)
-                factorial *= i;
+                fact *= i;
             sw.Stop();
 #if DEBUG
             string strElapsed;
@@ -317,7 +320,7 @@ namespace IntegerPi
 
             //WriteLine($"\nFactorial({n}):\n{factorial}\nElapsed time: {strElapsed}\n");
 #endif
-            return factorial;
+            return fact;
         }
 
         public BigInteger RamanujanFixed()
@@ -344,7 +347,7 @@ namespace IntegerPi
             sw.Stop();
 
 #if DEBUG
-            WriteLine($"Sum of terms:\n{sum}\n");
+            //WriteLine($"Sum of terms:\n{sum}\n");
             WriteLine($"1 / π:\n{one_over_pi}\n");
             string strElapsed;
             if (sw.ElapsedMilliseconds <= 1000)
@@ -393,9 +396,7 @@ namespace IntegerPi
 #endif
             return sum;
         }
-#endif
-
-#if BBP
+#else
         public BigInteger BBPFixed()
         {
             BigInteger sum = 0, term = 1;
@@ -423,7 +424,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"Sum of terms:\n{sum}\n");
+            //WriteLine($"Sum of terms:\n{sum}\n");
             WriteLine($"\nElapsed time: {strElapsed}\n");
 #endif
             return sum;
@@ -751,7 +752,7 @@ namespace IntegerPi
             WriteLine("LN2Fixed =\n{0}\n", pf.LN2Fixed());
 
             BigInteger sqrt2 = pf.Sqrt(pf.TWO);
-            BigInteger biAGM = pf.BigIntAGM(pf.normalize(pf.ONE, sqrt2), sqrt2);
+            BigInteger biAGM = pf.BigIntAGM(pf._ONE, sqrt2);
             WriteLine("BigIntAGM(1, √2) =\n{0}\n", biAGM);
             WriteLine("Gauss's constant =\n{0}\n", pf.ONE / biAGM);
 #endif
@@ -785,7 +786,7 @@ namespace IntegerPi
             // 256 terms accurate to 309 d.p. 
             // 19728 digits ~2.2s for BBPFixed() v1 / ~1.2s for BBPFixed() v2
             // 39467 digits ~8.0s for BBPFixed() v1 / ~4.7s for BBPFixed() v2
-            // 315655 digits ~613.7 s for BBPFixed() v1 / ~357.6 s for BBPFixed() v2
+            // 315655 digits ~582.6 s for BBPFixed() v1 / ~357.6 s for BBPFixed() v2
             string strPI = pf.BBPFixed().ToString().Insert(1, ".");
             WriteLine("BBP series π:\n{0}\n\n", strPI);
 #endif
