@@ -101,7 +101,7 @@ namespace IntegerPi
             while (a != g)
             {
                 a1 = (a + g) >> 1;
-                g1 = Sqrt(a * g);
+                g1 = SquareRootCeil(a * g);
                 a = a1; g = g1;
             }
             return a;
@@ -159,7 +159,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSquareRoot() elapsed time: {strElapsed}\nIterations: {iterations}\n\n");
+            WriteLine($"\nSquareRoot() {iterations} iterations took: {strElapsed}\n");
 #endif
             return quotient;
         }   // SquareRoot
@@ -194,7 +194,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSqrt() elapsed time: {strElapsed}\nIterations: {iterations}\n\n");
+            WriteLine($"\nSqrt() {iterations} iterations took: {strElapsed}\n");
 #endif
             return y;
         }   // Sqrt
@@ -212,14 +212,17 @@ namespace IntegerPi
             }
 
             BigInteger y;
+            int iterations = 0;
             Stopwatch sw = new Stopwatch();
 
             // starting with y = x / 2 avoids magnitude issues with x squared
             sw.Start();
             for (y = x >> ((int)BigInteger.Log(x, 2) >> 1);
-                 y.CompareTo(BigInteger.Divide(x, y)) > 0;
-                 y = BigInteger.Add(BigInteger.Divide(x, y), y) >> 1) 
-                ;
+                 BigInteger.Multiply(y, y).CompareTo(x) > 0;
+                 iterations++)
+            {
+                y = BigInteger.Add(BigInteger.Divide(x, y), y) >> 1;
+            }
             sw.Stop();
 #if DEBUG
             string strElapsed;
@@ -228,7 +231,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSquareRootFloor() elapsed time: {strElapsed}\n");
+            WriteLine($"\nSquareRootFloor() {iterations} iterations took: {strElapsed}\n");
 #endif
             return y;
         }   // SquareRootFloor
@@ -246,15 +249,18 @@ namespace IntegerPi
             }
 
             BigInteger y;
+            int iterations = 0;
             Stopwatch sw = new Stopwatch();
             var _TWO = BigInteger.One * 2;
 
             // starting with y = x / 2 avoids magnitude issues with x squared
             sw.Start();
             for (y = BigInteger.Divide(x, x >> ((int)BigInteger.Log(x, 2) >> 1) + 1);
-                 y.CompareTo(BigInteger.Divide(x, y)) > 0;
-                 y = BigInteger.Divide(BigInteger.Add(BigInteger.Divide(x, y), y), _TWO))
-            { }
+                 BigInteger.Multiply(y, y).CompareTo(x) > 0;
+                 iterations++)
+            {
+                y = BigInteger.Divide(BigInteger.Add(BigInteger.Divide(x, y), y), _TWO);
+            }
             sw.Stop();
 #if DEBUG
             string strElapsed;
@@ -263,7 +269,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSquareRootCeil() elapsed time: {strElapsed}\n");
+            WriteLine($"\nSquareRootCeil() {iterations} iterations took: {strElapsed}\n");
 #endif
 
             if (x.CompareTo(BigInteger.Multiply(y, y)) == 0)
@@ -649,9 +655,7 @@ namespace IntegerPi
         public dynamic TimeThis<T>(String strFuncName, Func<T> work)
         {
             if (work == null)
-            {
                 throw new ArgumentNullException(nameof(work));
-            }
 
             Stopwatch sw = Stopwatch.StartNew();
             T result = work();
@@ -671,9 +675,7 @@ namespace IntegerPi
         public dynamic TimeThis<T, BigInteger>(String strFuncName, Func<T, BigInteger> work)
         {
             if (work == null)
-            {
                 throw new ArgumentNullException(nameof(work));
-            }
 
             var sw = Stopwatch.StartNew();
             ArgIterator b = new ArgIterator();                          // what is this line for?
