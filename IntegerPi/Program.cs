@@ -342,24 +342,18 @@ namespace IntegerPi
 
         public BigInteger SquareRootBakhshali(BigInteger S)
         {
-            //S = normalize(S, _ONE);
-            BigInteger x = S >> 1; // ((int)BigInteger.Log(S, 2) >> 1);
+            BigInteger x = S >> 1; 
             int iterations = 0;
             Stopwatch sw = new Stopwatch();
 
-            // Loop until we hit the same value twice in a row, or wind
-            // up alternating.
+            // Loop until divisor b2 is zero.
             sw.Start();
             bool bBreak = false;
             while (!bBreak)
             {
                 BigInteger x_sqrd = BigInteger.Multiply(x, x);
-                //int pow10 = (int)BigInteger.Log10(x_sqrd);
-                //pow10 = (int)BigInteger.Log10(ONE) + pow10;
                 x_sqrd /= _ONE;
                 BigInteger a = BigInteger.Subtract(S, x_sqrd);
-                //int pow10 = x.ToString().Length - (int)m_DIGITS / 2;
-                //x /= BigInteger.Pow(10, pow10);
                 a *= _ONE;
                 a = BigInteger.Divide(a, x << 1);
                 BigInteger b = x + a;
@@ -382,6 +376,39 @@ namespace IntegerPi
 #endif
             return x;
         }   // SquareRootBakhshali(BigInteger)
+
+        public BigInteger SquareRootTwoVariable(BigInteger S)
+        {
+            BigInteger a = S;
+            BigInteger c = S - _ONE;
+            BigInteger _THREE = _TWO + _ONE;
+            int iterations = 0;
+            Stopwatch sw = new Stopwatch();
+
+            // Loop until divisor c is zero.
+            sw.Start();
+            bool bBreak = false;
+            while (!bBreak)
+            {
+                BigInteger a1 = a * c / _ONE;
+                a -= a1 >> 1;
+                c = c * c * (c - _THREE) / ONE;
+                c >>= 2;
+                bBreak = c.IsZero;
+                iterations++;
+            }
+            sw.Stop();
+#if DEBUG
+            string strElapsed;
+            if (sw.ElapsedMilliseconds <= 1000)
+                strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
+            else
+                strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
+
+            WriteLine($"\nSquareRootTwoVariable() {iterations} iterations took: {strElapsed}\n");
+#endif
+            return a;
+        }   // SquareRootTwoVariable(BigInteger)
 
         // http://rosettacode.org/wiki/Integer_roots#C.23
         public BigInteger NthRoot(BigInteger @base, int n)
@@ -831,11 +858,14 @@ namespace IntegerPi
 
 #if DEBUG
 #if SQRT
+            BigInteger NINE = pf.TWO * 4 + pf.ONE;
+            BigInteger _NINE = pf._TWO * 4 + pf._ONE;
             WriteLine("SquareRoot({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRoot(pf.TWO));
             WriteLine("Sqrt({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.Sqrt(pf.TWO));
             WriteLine("SquareRootFloor({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootFloor(pf.TWO));
             WriteLine("SquareRootCeil({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootCeil(pf.TWO));
             WriteLine("SquareRootBakhshali({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootBakhshali(pf._TWO));
+            WriteLine("SquareRootTwoVariable({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootTwoVariable(pf._TWO));
 
             Write("Press Enter: "); ReadLine();
 
