@@ -20,6 +20,30 @@ using static System.Console;
 
 namespace IntegerPi
 {
+    class BigDecimal : object
+    {
+        private BigInteger bignum;
+        private int expo;
+
+        public BigDecimal(double n)
+        {
+            string frac = (n - Math.Floor(n)).ToString();
+            bignum = new BigInteger(n * Math.Pow(10, frac.Length));
+            expo = -frac.Length;
+        }
+
+        public BigDecimal(int n)
+        {
+            bignum = n;
+            expo = 0;
+        }
+
+        public static BigDecimal operator +(BigDecimal b)
+        {
+            return new BigDecimal(1.5);
+        }
+    }
+
     class PiFunctions
     {
         uint m_STEPS, m_DIGITS;
@@ -278,6 +302,83 @@ namespace IntegerPi
                 return BigInteger.Add(y, BigInteger.One);
 
         }   // SquareRootCeil
+
+        public double SquareRootBakhshali(double S)
+        {
+            double x = S / 2.0;
+            //BigInteger x = S >> 1;
+            int iterations = 0;
+            Stopwatch sw = new Stopwatch();
+
+            // Loop until we hit the same value twice in a row, or wind
+            // up alternating.
+            sw.Start();
+            bool bBreak = false;
+            while (!bBreak)
+            {
+                double a = (S - x * x);
+                a /= (2.0 * x);
+                double b = x + a;
+                a *= a;
+                a /= (2.0 * b);
+                x = b - a;
+                bBreak = b.Equals(x);
+                iterations++;
+            }
+            sw.Stop();
+#if DEBUG
+            string strElapsed;
+            if (sw.ElapsedMilliseconds <= 1000)
+                strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
+            else
+                strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
+
+            WriteLine($"\nSquareRootBakhshali() {iterations} iterations took: {strElapsed}\n");
+#endif
+            return x;
+        }   // SquareRootBakhshali
+
+        public BigInteger SquareRootBakhshali(BigInteger S)
+        {
+            BigInteger x = S >> 1; // ((int)BigInteger.Log(S, 2) >> 1);
+            int iterations = 0;
+            Stopwatch sw = new Stopwatch();
+
+            // Loop until we hit the same value twice in a row, or wind
+            // up alternating.
+            sw.Start();
+            bool bBreak = false;
+            while (!bBreak)
+            {
+                BigInteger x_sqrd = BigInteger.Multiply(x, x);
+                int pow10 = (int)BigInteger.Log10(x_sqrd);
+                //pow10 = (int)BigInteger.Log10(ONE) + pow10;
+                x_sqrd /= ONE;
+                BigInteger a = BigInteger.Subtract(S, x_sqrd);
+                //int pow10 = x.ToString().Length - (int)m_DIGITS / 2;
+                //x /= BigInteger.Pow(10, pow10);
+                a *= ONE;
+                a = BigInteger.Divide(a, x << 1);
+                BigInteger b = x + a;
+                
+                BigInteger b2 = BigInteger.Divide(a * a, b << 1);
+                bBreak = b2.IsZero || b2.IsOne;
+
+                x = BigInteger.Subtract(b, b2);
+                iterations++;
+            }
+            sw.Stop();
+#if DEBUG
+            string strElapsed;
+            if (sw.ElapsedMilliseconds <= 1000)
+                strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
+            else
+                strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
+
+            WriteLine($"\nSquareRootBakhshali() {iterations} iterations took: {strElapsed}\n");
+#endif
+            return x;
+        }   // SquareRootBakhshali(BigInteger)
 
         // http://rosettacode.org/wiki/Integer_roots#C.23
         public BigInteger NthRoot(BigInteger @base, int n)
@@ -727,10 +828,13 @@ namespace IntegerPi
 
 #if DEBUG
 #if SQRT
-            WriteLine("SquareRoot({0}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRoot(pf.TWO));
-            WriteLine("Sqrt({0}) =\n{1}\n", pf.TWO.GetHashCode(), pf.Sqrt(pf.TWO));
-            WriteLine("SquareRootFloor({0}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootFloor(pf.TWO));
-            WriteLine("SquareRootCeil({0}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootCeil(pf.TWO));
+            WriteLine("SquareRoot({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRoot(pf.TWO));
+            WriteLine("Sqrt({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.Sqrt(pf.TWO));
+            WriteLine("SquareRootFloor({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootFloor(pf.TWO));
+            WriteLine("SquareRootCeil({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootCeil(pf.TWO));
+            WriteLine("SquareRootBakhshali({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootBakhshali(pf.TWO));
+
+            Write("Press Enter: "); ReadLine();
 
             var sw = new Stopwatch();
             sw.Start();
@@ -739,8 +843,6 @@ namespace IntegerPi
                 sqrt2 = pf.SquareRoot(pf.ONE * i);
             sw.Stop();
             WriteLine("1000 runs of SquareRoot() took: {0:F1} s", sw.Elapsed.TotalSeconds);
-
-            Write("Press Enter: "); ReadLine();
 
             sw.Restart();
             for (int i = 1; i <= 1000; i++)
