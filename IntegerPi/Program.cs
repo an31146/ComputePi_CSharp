@@ -51,6 +51,7 @@ namespace IntegerPi
         public BigInteger ONE => m_ONE;         // double digits precision
         public BigInteger _ONE;
         public BigInteger TWO => m_TWO;
+        public BigInteger _TWO;
 
         public uint STEPS
         {
@@ -71,6 +72,7 @@ namespace IntegerPi
             m_ONE = normalize(1, m_DIGITS);
             m_TWO = normalize(2, m_DIGITS);
             _ONE = BigInteger.Pow(10, (int)m_DIGITS);
+            _TWO = 2 * _ONE;
         }
 
         /*
@@ -340,6 +342,7 @@ namespace IntegerPi
 
         public BigInteger SquareRootBakhshali(BigInteger S)
         {
+            //S = normalize(S, _ONE);
             BigInteger x = S >> 1; // ((int)BigInteger.Log(S, 2) >> 1);
             int iterations = 0;
             Stopwatch sw = new Stopwatch();
@@ -351,18 +354,18 @@ namespace IntegerPi
             while (!bBreak)
             {
                 BigInteger x_sqrd = BigInteger.Multiply(x, x);
-                int pow10 = (int)BigInteger.Log10(x_sqrd);
+                //int pow10 = (int)BigInteger.Log10(x_sqrd);
                 //pow10 = (int)BigInteger.Log10(ONE) + pow10;
-                x_sqrd /= ONE;
+                x_sqrd /= _ONE;
                 BigInteger a = BigInteger.Subtract(S, x_sqrd);
                 //int pow10 = x.ToString().Length - (int)m_DIGITS / 2;
                 //x /= BigInteger.Pow(10, pow10);
-                a *= ONE;
+                a *= _ONE;
                 a = BigInteger.Divide(a, x << 1);
                 BigInteger b = x + a;
                 
                 BigInteger b2 = BigInteger.Divide(a * a, b << 1);
-                bBreak = b2.IsZero || b2.IsOne;
+                bBreak = b2.IsZero;
 
                 x = BigInteger.Subtract(b, b2);
                 iterations++;
@@ -832,7 +835,7 @@ namespace IntegerPi
             WriteLine("Sqrt({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.Sqrt(pf.TWO));
             WriteLine("SquareRootFloor({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootFloor(pf.TWO));
             WriteLine("SquareRootCeil({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootCeil(pf.TWO));
-            WriteLine("SquareRootBakhshali({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootBakhshali(pf.TWO));
+            WriteLine("SquareRootBakhshali({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootBakhshali(pf._TWO));
 
             Write("Press Enter: "); ReadLine();
 
