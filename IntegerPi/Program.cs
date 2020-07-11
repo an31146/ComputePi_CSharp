@@ -3,6 +3,7 @@ using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -127,7 +128,7 @@ namespace IntegerPi
             while (a != g)
             {
                 a1 = (a + g) >> 1;
-                g1 = SquareRootCeil(a * g);
+                g1 = Sqrt(a * g);
                 a = a1; g = g1;
             }
             return a;
@@ -381,7 +382,7 @@ namespace IntegerPi
         {
             BigInteger a = S;
             BigInteger c = S - _ONE;
-            BigInteger _THREE = _TWO + _ONE;
+            BigInteger _THREE = 3 * _ONE;
             int iterations = 0;
             Stopwatch sw = new Stopwatch();
 
@@ -409,6 +410,38 @@ namespace IntegerPi
 #endif
             return a;
         }   // SquareRootTwoVariable(BigInteger)
+
+        public BigInteger ReciprocalSquareRoot(BigInteger S)
+        {
+            BigInteger x = ONE / S;
+            BigInteger _THREE = 3 * _ONE;
+            int iterations = 0;
+            Stopwatch sw = new Stopwatch();
+
+            // Loop until the next iteration equals the previous.
+            sw.Start();
+            bool bBreak = false;
+            while (!bBreak)
+            {
+                BigInteger _x = S * x * x / ONE;
+                _x = x * (_THREE - _x);
+                _x /= _ONE << 1;
+                bBreak = _x.Equals(x);
+                x = _x;
+                iterations++;
+            }
+            sw.Stop();
+#if DEBUG
+            string strElapsed;
+            if (sw.ElapsedMilliseconds <= 1000)
+                strElapsed = String.Format("{0} ms", sw.ElapsedMilliseconds);
+            else
+                strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
+
+            WriteLine($"\nReciprocalSquareRoot() {iterations} iterations took: {strElapsed}\n");
+#endif
+            return x;
+        }   // ReciprocalSquareRoot(BigInteger)
 
         // http://rosettacode.org/wiki/Integer_roots#C.23
         public BigInteger NthRoot(BigInteger @base, int n)
@@ -858,14 +891,24 @@ namespace IntegerPi
 
 #if DEBUG
 #if SQRT
-            BigInteger NINE = pf.TWO * 4 + pf.ONE;
-            BigInteger _NINE = pf._TWO * 4 + pf._ONE;
+            BigInteger NINE = 9 * pf.ONE;
+            BigInteger _THREE = pf._TWO + pf._ONE;
             WriteLine("SquareRoot({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRoot(pf.TWO));
             WriteLine("Sqrt({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.Sqrt(pf.TWO));
             WriteLine("SquareRootFloor({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootFloor(pf.TWO));
             WriteLine("SquareRootCeil({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootCeil(pf.TWO));
             WriteLine("SquareRootBakhshali({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootBakhshali(pf._TWO));
+
+            // TwoVariable method is only valid for 0 < S < 3
             WriteLine("SquareRootTwoVariable({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootTwoVariable(pf._TWO));
+            BigInteger reciprocal = pf.ReciprocalSquareRoot(pf._TWO);
+            WriteLine("ReciprocalSquareRoot({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), reciprocal);
+            /*
+            BigInteger _two = pf.ONE / reciprocal;
+            _two *= _two;
+            _two /= pf._ONE;
+            WriteLine("reciprocal_squared: {0}", _two);
+            */
 
             Write("Press Enter: "); ReadLine();
 
@@ -873,15 +916,15 @@ namespace IntegerPi
             sw.Start();
             BigInteger sqrt2 = 0;
             for (int i = 1; i <= 1000; i++)
-                sqrt2 = pf.SquareRoot(pf.ONE * i);
+                sqrt2 = pf.Sqrt(pf._ONE * i);
             sw.Stop();
-            WriteLine("1000 runs of SquareRoot() took: {0:F1} s", sw.Elapsed.TotalSeconds);
+            WriteLine("1000 runs of Sqrt() took: {0:F1} s", sw.Elapsed.TotalSeconds);
 
             sw.Restart();
             for (int i = 1; i <= 1000; i++)
-                sqrt2 = pf.Sqrt(pf.ONE * i);
+                sqrt2 = pf.SquareRootBakhshali(pf._ONE * i);
             sw.Stop();
-            WriteLine("1000 runs of Sqrt() took: {0:F1} s", sw.Elapsed.TotalSeconds);
+            WriteLine("1000 runs of SquareRootBakhshali() took: {0:F1} s", sw.Elapsed.TotalSeconds);
 
 #endif
 #if EXP || AGM
