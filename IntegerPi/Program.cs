@@ -901,6 +901,7 @@ namespace IntegerPi
 
             // TwoVariable method is only valid for 0 < S < 3
             WriteLine("SquareRootTwoVariable({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), pf.SquareRootTwoVariable(pf._TWO));
+            
             BigInteger reciprocal = pf.ReciprocalSquareRoot(pf._TWO);
             WriteLine("ReciprocalSquareRoot({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), reciprocal);
             /*
@@ -990,6 +991,33 @@ namespace IntegerPi
             WriteLine("SquareRootCeil(pf.TWO.GetHashCode() = {0:x}) =\n{1}\n", 
                                                     pf.TWO.GetHashCode(), 
                                                     pf.TimeThis("SquareRootCeil(pf.TWO)", () => pf.SquareRootCeil(pf.TWO)));
+            WriteLine("SquareRootBakhshali({0:x}) =\n{1}\n", 
+                                                    pf._TWO.GetHashCode(),
+                                                    pf.TimeThis("pf.SquareRootBakhshali(pf._TWO)", () => pf.SquareRootBakhshali(pf._TWO)));
+
+            // TwoVariable method is only valid for 0 < S < 3
+            WriteLine("SquareRootTwoVariable({0:x}) =\n{1}\n", 
+                                                    pf._TWO.GetHashCode(),
+                                                    pf.TimeThis("pf.SquareRootTwoVariable(pf._TWO)", () => pf.SquareRootTwoVariable(pf._TWO)));
+
+            BigInteger reciprocal = pf.TimeThis("pf.ReciprocalSquareRoot(pf._TWO)", () => pf.ReciprocalSquareRoot(pf._TWO));
+            WriteLine("ReciprocalSquareRoot({0:x}) =\n{1}\n", pf.TWO.GetHashCode(), reciprocal);
+            Write("Press Enter: "); ReadLine();
+
+            var sw = new Stopwatch();
+            sw.Start();
+            BigInteger sqrt2 = 0;
+            for (int i = 1; i <= 1000; i++)
+                sqrt2 = pf.Sqrt(pf._ONE * i);
+            sw.Stop();
+            WriteLine("1000 runs of Sqrt() took: {0:F1} s", sw.Elapsed.TotalSeconds);
+
+            sw.Restart();
+            for (int i = 1; i <= 1000; i++)
+                sqrt2 = pf.SquareRootBakhshali(pf._ONE * i);
+            sw.Stop();
+            WriteLine("1000 runs of SquareRootBakhshali() took: {0:F1} s", sw.Elapsed.TotalSeconds);
+
 #endif
 #if FACT
             WriteLine("Factorial({0}) = \n{1}\n", 100, pf.TimeThis("Factorial(100)", () => pf.Factorial(100)));

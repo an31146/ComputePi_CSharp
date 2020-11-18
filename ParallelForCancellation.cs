@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -39,7 +36,7 @@ namespace ComputePi
                         {
                             Console.WriteLine("Start Thread={0}, i={1}", Thread.CurrentThread.ManagedThreadId, i);
 
-                            // Simulate a cancellation of the loop when i=2
+                            // Simulate a cancellation of the loop when i=5
                             if (i == 5)
                             {
                                 cancellationSource.Cancel();
