@@ -1,10 +1,7 @@
 ﻿using System;
-using System.CodeDom;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
-using System.Runtime.Remoting.Messaging;
-using System.Threading;
 using System.Threading.Tasks;
 
 using static System.Console;
@@ -600,7 +597,7 @@ namespace IntegerPi
             return sum;
         }
 #endif
-        public double SlowHarmonicSeries(long N)
+        public double SlowHarmonicSeries(int N)
         {
             double sum = 0, term;
             // Can this loop be parallelized?  Yes, but it doesn't work very well.
@@ -614,8 +611,8 @@ namespace IntegerPi
                 return local;
             }, local => { lock (Monitor) sum += local; });
             */
-            for (long i = 1; i < N; i++)
-                sum += 1.0 / i;
+            sum =  (from i in Enumerable.Range(1, N)
+                    select 1.0 / i).Sum();
             sw.Stop();
 #if DEBUG
             string strElapsed;
@@ -624,24 +621,35 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nElapsed time: {strElapsed}\n");
-            WriteLine($"Sum of terms:\n{sum}\n");
+            WriteLine($"Elapsed time: {strElapsed}");
+            WriteLine($"Sum of terms: {sum}\n");
 #endif
             return sum;
         }
 
         public double Euler()
         {
-            const long n = 4000000000L;
-            return SlowHarmonicSeries(n) - Math.Log(n) - 1.0 / (n >> 1) + 1.0 / n / (n * 12.0);
+            const int n = int.MaxValue;
+            // https://en.wikipedia.org/wiki/Euler%E2%80%93Mascheroni_constant#Asymptotic_expansions
+            return SlowHarmonicSeries(n) - Math.Log(n) - 1.0 / (n * 2.0) + 1.0 / n / (n * 12.0) - 1.0 / Math.Pow(n, 4) / 120.0;
         }
 
         public BigInteger SlowHarmonicSeries()
         {
             BigInteger sum = 0;
 
-            for (BigInteger n = 1; n <= BigInteger.Pow(10, (int)m_DIGITS); n++)
-                sum += _ONE / n;
+            for (int n = 1; n <= 1000; n++)
+                sum += m_ONE / (n * _ONE);
+
+            return sum;
+        }
+
+        public double HarmonicIdentities()
+        {
+            //https://en.wikipedia.org/wiki/Harmonic_number#Identities_involving_%CF%80
+            double sum = 0.0;
+            for (int n = 1; n <= 100; n++)
+                sum += SlowHarmonicSeries(n) / n / Math.Pow(2.0, n);
 
             return sum;
         }
@@ -945,8 +953,9 @@ namespace IntegerPi
             }
 #endif
 #if EULER
-            //WriteLine("SlowHarmonicSeries()", pf.SlowHarmonicSeries());
-            WriteLine("Euler-Mascheroni constant =\n{0}\n", pf.Euler());
+            //WriteLine("SlowHarmonicSeries() {0}", pf.SlowHarmonicSeries());
+            WriteLine("HarmonicIdentities() {0}", pf.HarmonicIdentities());
+            WriteLine("Euler-Mascheroni constant ≈ {0}\n", pf.Euler());
 #endif
 #if FACT
             WriteLine("Factorial({0}) = \n{1}\n", 100, pf.Factorial(100));
