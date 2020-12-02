@@ -634,11 +634,11 @@ namespace IntegerPi
             return SlowHarmonicSeries(n) - Math.Log(n) - 1.0 / (n * 2.0) + 1.0 / n / (n * 12.0) - 1.0 / Math.Pow(n, 4) / 120.0;
         }
 
-        public BigInteger SlowHarmonicSeries()
+        public BigInteger SlowHarmonicSeriesFixed(uint limit)
         {
             BigInteger sum = 0;
 
-            for (int n = 1; n <= 1000; n++)
+            for (int n = 1; n <= (int)limit; n++)
                 sum += m_ONE / (n * _ONE);
 
             return sum;
@@ -648,8 +648,22 @@ namespace IntegerPi
         {
             //https://en.wikipedia.org/wiki/Harmonic_number#Identities_involving_%CF%80
             double sum = 0.0;
-            for (int n = 1; n <= 100; n++)
+            for (int n = 1; n <= (int)STEPS; n++)
                 sum += SlowHarmonicSeries(n) / n / Math.Pow(2.0, n);
+
+            return sum;
+        }
+
+        public BigInteger HarmonicIdentitiesFixed()
+        {
+            BigInteger sum = BigInteger.Zero;
+            for (uint n = 1; n <= STEPS; n++)
+            {
+                var Hn = SlowHarmonicSeriesFixed(n);
+                Debug.WriteLine(string.Format("{0}", Hn));
+
+                sum += Hn / (n * (BigInteger.One << (int)n));
+            }
 
             return sum;
         }
@@ -953,9 +967,12 @@ namespace IntegerPi
             }
 #endif
 #if EULER
-            //WriteLine("SlowHarmonicSeries() {0}", pf.SlowHarmonicSeries());
+            //WriteLine("SlowHarmonicSeriesFixed({0}) {1}", pf.STEPS, pf.SlowHarmonicSeriesFixed(pf.STEPS));
             WriteLine("HarmonicIdentities() {0}", pf.HarmonicIdentities());
-            WriteLine("Euler-Mascheroni constant ≈ {0}\n", pf.Euler());
+            var BigInt_pi_squared_over_twelve = pf.HarmonicIdentitiesFixed();
+            WriteLine("HarmonicIdentitiesFixed() {0}", BigInt_pi_squared_over_twelve);
+            WriteLine("√(BigInt_pi_squared_over_twelve * 12): {0}", pf.Sqrt(BigInt_pi_squared_over_twelve * 12 * pf._ONE));
+            //WriteLine("Euler-Mascheroni constant ≈ {0}\n", pf.Euler());
 #endif
 #if FACT
             WriteLine("Factorial({0}) = \n{1}\n", 100, pf.Factorial(100));
