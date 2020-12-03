@@ -453,7 +453,7 @@ namespace IntegerPi
             BigInteger n3 = n1;
             BigInteger c = 1;
             BigInteger d = (n3 + @base) / n2;
-            BigInteger e = ((n3 * d) + (@base / BigInteger.Pow(d, n1))) / n2;
+            BigInteger e = (n3 * d + @base / BigInteger.Pow(d, n1)) / n2;
             while (c != d && c != e)
             {
                 c = d;
