@@ -18,27 +18,157 @@ using static System.Console;
 
 namespace IntegerPi
 {
-    class BigDecimal : object
+    class BigDecimal
     {
-        private BigInteger bignum;
-        private int expo;
+        private BigInteger _mantissa;
+        private int _exponent;
 
-        public BigDecimal(double n)
+        public BigInteger mantissa => _mantissa;
+
+        public int exponent => _exponent;
+
+        public BigDecimal(BigInteger big, int expo)
         {
-            string frac = (n - Math.Floor(n)).ToString();
-            bignum = new BigInteger(n * Math.Pow(10, frac.Length));
-            expo = -frac.Length;
+            _mantissa = big;
+            _exponent = expo;
         }
 
-        public BigDecimal(int n)
+        public static implicit operator BigDecimal(double n)
         {
-            bignum = n;
-            expo = 0;
+            string frac = n.ToString();
+            int decimals = frac.IndexOf('.');
+            var man = new BigInteger(n * Math.Pow(10, frac.Length - decimals));
+            var expo = decimals - frac.Length;
+
+            return new BigDecimal(man, expo);
         }
 
-        public static BigDecimal operator +(BigDecimal b)
+        public static implicit operator BigDecimal(int n)
         {
-            return new BigDecimal(1.5);
+            return new BigDecimal(n, 0);
+        }
+
+        public static BigDecimal operator +(BigDecimal a, BigDecimal b)
+        {
+            BigDecimal r;
+            if (a.exponent < b.exponent)
+            {
+                r = b;
+                r._mantissa *= BigInteger.Pow(10, b.exponent - a.exponent);
+                r._mantissa += a.mantissa;
+                r._exponent = a.exponent;
+            }
+            else
+            {
+                r = a;
+                r._mantissa *= BigInteger.Pow(10, a.exponent - b.exponent);
+                r._mantissa += b.mantissa;
+                r._exponent = b.exponent;
+            }
+            return r;
+        }
+
+        public static BigDecimal operator -(BigDecimal a, BigDecimal b)
+        {
+            BigDecimal r;
+            if (a.exponent < b.exponent)
+            {
+                r = b;
+                r._mantissa *= BigInteger.Pow(10, b.exponent - a.exponent);
+                if (a._mantissa < r.mantissa)
+                    r._mantissa -= a.mantissa;
+                else
+                    r._mantissa = a.mantissa - r.mantissa;
+                r._exponent = a.exponent;
+            }
+            else
+            {
+                r = a;
+                r._mantissa *= BigInteger.Pow(10, a.exponent - b.exponent);
+                if (b.mantissa < r.mantissa)
+                    r._mantissa -= b.mantissa;
+                else
+                    r._mantissa = b.mantissa - r.mantissa;
+                r._exponent = b.exponent;
+            }
+            return r;
+        }
+
+        public static BigDecimal operator *(BigDecimal a, BigDecimal b)
+        {
+            BigDecimal r = a;
+            r._mantissa *= b.mantissa;
+            r._exponent += b.exponent;
+            return r;
+        }
+
+        public static BigDecimal operator /(BigDecimal a, BigDecimal b)
+        {
+            BigDecimal r = a;
+            if (a.exponent < b.exponent)
+            {
+                r._mantissa *= BigInteger.Pow(10, Math.Abs(a.exponent - b.exponent));
+                r._mantissa /= b.mantissa;
+                r._exponent = b.exponent - a.exponent;
+            }
+            else
+            {
+                r._mantissa *= BigInteger.Pow(10, Math.Abs(b.exponent - a.exponent));
+                r._mantissa /= b.mantissa;
+                r._exponent = a.exponent - b.exponent;
+            }
+            return r;
+        }
+
+        public override string ToString()
+        {
+            if (_exponent < 0)
+            {
+                var tmp = _mantissa.ToString();
+                var dec_point = tmp.Length + _exponent;
+                if (dec_point == 0)
+                    tmp = tmp.Insert(dec_point, "0.");
+                else
+                    tmp = tmp.Insert(tmp.Length + _exponent, ".");
+                return tmp;
+            }
+            else
+            {
+                var tmp = _mantissa * BigInteger.Pow(10, _exponent);
+                return tmp.ToString();
+            }
+        }
+
+        public void TestBigDecimal()
+        {
+            BigDecimal a = 2020;
+            BigDecimal b = 0.123;
+            var c = b + a;
+            Debug.WriteLine(c);
+
+            a = c;
+            b = 0.01;
+            c = a - b;
+            Debug.WriteLine(b);
+
+            b = 100.001;
+            c -= b;
+            Debug.WriteLine(c);
+
+            a = 65.537;
+            b = 100.1;
+            c = a * b;
+            Debug.WriteLine(c);
+
+            Beep();
+            b = 1.23;
+            c = a / b;
+            Debug.WriteLine(c);
+
+            a = 2460.12;
+            b = 1.23;
+            c = a / b;
+            Debug.WriteLine(c);
         }
     }
 
@@ -880,7 +1010,7 @@ namespace IntegerPi
     }   // class PiFunctions
 
     class Program
-    { 
+    {
         static void Main(string[] args)
         {
             PiFunctions pf = new PiFunctions();
@@ -967,12 +1097,14 @@ namespace IntegerPi
             }
 #endif
 #if EULER
+            WriteLine("Euler-Mascheroni constant ≈ {0}\n", pf.Euler());
+#endif
+#if HARMONIC
             //WriteLine("SlowHarmonicSeriesFixed({0}) {1}", pf.STEPS, pf.SlowHarmonicSeriesFixed(pf.STEPS));
             WriteLine("HarmonicIdentities() {0}", pf.HarmonicIdentities());
             var BigInt_pi_squared_over_twelve = pf.HarmonicIdentitiesFixed();
             WriteLine("HarmonicIdentitiesFixed() {0}", BigInt_pi_squared_over_twelve);
             WriteLine("√(BigInt_pi_squared_over_twelve * 12): {0}", pf.Sqrt(BigInt_pi_squared_over_twelve * 12 * pf._ONE));
-            //WriteLine("Euler-Mascheroni constant ≈ {0}\n", pf.Euler());
 #endif
 #if FACT
             WriteLine("Factorial({0}) = \n{1}\n", 100, pf.Factorial(100));
