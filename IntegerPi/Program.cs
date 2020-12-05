@@ -767,9 +767,20 @@ namespace IntegerPi
         public BigInteger SlowHarmonicSeriesFixed(uint limit)
         {
             BigInteger sum = 0;
+            var sw = new Stopwatch();
 
             for (int n = 1; n <= (int)limit; n++)
+            {
+#if DEBUG
+                sw.Start();
+#endif
                 sum += m_ONE / (n * _ONE);
+#if DEBUG
+                sw.Stop();
+                Debug.WriteLine(string.Format("iteration #{0} took: {1} ms", n, sw.ElapsedMilliseconds));
+                sw.Reset();
+#endif
+            }
 
             return sum;
         }
@@ -787,14 +798,26 @@ namespace IntegerPi
         public BigInteger HarmonicIdentitiesFixed()
         {
             BigInteger sum = BigInteger.Zero;
-            for (uint n = 1; n <= STEPS; n++)
+            var Hn = sum;
+            var sw = new Stopwatch();
+#if DEBUG
+            sw.Start();
+#endif
+            for (int n = 1; n <= STEPS; n++)
             {
-                var Hn = SlowHarmonicSeriesFixed(n);
-                Debug.WriteLine(string.Format("{0}", Hn));
-
-                sum += Hn / (n * (BigInteger.One << (int)n));
+                //var range = ParallelEnumerable.Range(1, (int)STEPS + 1);
+                //sum = range.AsParallel().Aggregate(BigInteger.Zero, (sub, n) => 
+                //    BigInteger.Add(sub, SlowHarmonicSeriesFixed((uint)n) / (n * (BigInteger.One << (int)n))));
+                Hn += m_ONE / (n * _ONE);
+                sum += Hn / (n * (BigInteger.One << n));
+#if DEBUG
+                Debug.WriteLine(string.Format("HarmonicIdentitiesFixed() iteration #{0}", n));
+#endif
             }
-
+#if DEBUG
+            sw.Stop();
+            WriteLine(string.Format("HarmonicIdentitiesFixed() #{1} steps took {0:F1} s\n", sw.Elapsed.TotalSeconds, STEPS));
+#endif
             return sum;
         }
 
@@ -1102,9 +1125,13 @@ namespace IntegerPi
 #if HARMONIC
             //WriteLine("SlowHarmonicSeriesFixed({0}) {1}", pf.STEPS, pf.SlowHarmonicSeriesFixed(pf.STEPS));
             WriteLine("HarmonicIdentities() {0}", pf.HarmonicIdentities());
+#if DEBUG
             var BigInt_pi_squared_over_twelve = pf.HarmonicIdentitiesFixed();
+#else
+            var BigInt_pi_squared_over_twelve = pf.TimeThis("HarmonicIdentitiesFixed()", () => pf.HarmonicIdentitiesFixed());
+#endif
             WriteLine("HarmonicIdentitiesFixed() {0}", BigInt_pi_squared_over_twelve);
-            WriteLine("√(BigInt_pi_squared_over_twelve * 12): {0}", pf.Sqrt(BigInt_pi_squared_over_twelve * 12 * pf._ONE));
+            WriteLine("√(BigInt_pi_squared_over_twelve * 12):\n{0}", pf.Sqrt(BigInt_pi_squared_over_twelve * 12 * pf._ONE));
 #endif
 #if FACT
             WriteLine("Factorial({0}) = \n{1}\n", 100, pf.Factorial(100));
@@ -1116,7 +1143,12 @@ namespace IntegerPi
              * 6 req. for default prec to 53 d.p.
              * 19728 digits ~69.5 s
              */
-            string strPI = pf.RamanujanFixed().ToString().Insert(1, ".");
+#if DEBUG
+            var Ramanujan = pf.RamanujanFixed();
+#else
+            var Ramanujan = pf.TimeThis("RamanujanFuxed()", () => pf.RamanujanFixed());
+#endif
+            string strPI = Ramanujan.ToString().Insert(1, ".");
             WriteLine("Ramanujan series π:\n{0}\n\n", strPI);         // 43 terms accurate to 309 d.p. + rounding error
                                                                       // 49 terms accurate to 397 d.p.
                                                                       // 125 terms  accurate to 1002 d.p.
