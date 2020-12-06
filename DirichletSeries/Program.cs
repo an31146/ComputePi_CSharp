@@ -1,11 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Numerics;
-using System.Collections;
 using System.Threading.Tasks;
-
-using static System.Math;
 using static System.Console;
-using System;
+using static System.Math;
 
 namespace DirichletSeries
 {
@@ -37,7 +35,7 @@ namespace DirichletSeries
             {
                 if (p % 5 == 0)
                     p += 2;
-                
+
                 bool isPrime = BigInteger.ModPow(r.Next((int)p), p - 1, p) == 1;
 
                 if (isPrime)
@@ -107,9 +105,9 @@ namespace DirichletSeries
         static Complex rsiegeltheta(double t)
         {
             Complex a, b, theta;
-            a = loggamma(new Complex(0.25, t / 2.0)); 
+            a = loggamma(new Complex(0.25, t / 2.0));
             b = loggamma(new Complex(0.25, -t / 2.0));
-            
+
             theta = (a - b) * new Complex(0, -0.5);
             theta -= Log(PI) / 2.0 * t;
 
@@ -119,7 +117,7 @@ namespace DirichletSeries
         static double rsiegelz(double t, int n)
         {
             double ZZ = 0.0;
-            double R = 0.0; 
+            double R = 0.0;
             double j = 1.0;
             int k = 0;
             int N = (int)Floor(Sqrt(t * 0.5 / PI));
@@ -127,14 +125,14 @@ namespace DirichletSeries
 
             while (j <= N)
             {
-                ZZ = ZZ + 1.0 / Sqrt(j) * Cos( (rsiegeltheta(t).Real - t * Log(j)) % (2.0 * PI) );
+                ZZ = ZZ + 1.0 / Sqrt(j) * Cos((rsiegeltheta(t).Real - t * Log(j)) % (2.0 * PI));
                 j += 1.0;
             }
             ZZ = 2.0 * ZZ;
 
             while (k <= n)
             {
-                R = R + C(2.0 * p - 1.0, k) * Pow(2.0 * PI / t, (double)k*0.5);
+                R = R + C(2.0 * p - 1.0, k) * Pow(2.0 * PI / t, (double)k * 0.5);
                 ++k;
             }
             R = Pow(2.0 * PI / t, 0.25) * R;
@@ -292,7 +290,7 @@ namespace DirichletSeries
             {
                 var direction = n % 2 == 0 ? PI : 0;
                 var newTerm = Complex.Exp(new Complex(-Log(n) * 0.5d, -Log(n) * t + direction));
-                lock (monitor_zeta) 
+                lock (monitor_zeta)
                     zetaZero += newTerm;
                 //return local++;
             }
@@ -329,13 +327,13 @@ namespace DirichletSeries
             var range = Enumerable.Range(1, terms);
             object monitor_zeta = new object();
             object monitor = new object();
-            
+
             //for (int n = 1; n < terms; n++)
             Parallel.ForEach(range, () => 0.0, (n, state, local) =>
             {
                 double d = (double)n;
                 Complex t1 = d / Complex.Pow(d + 1.0, s);
-                Complex t2 = (d -s) / Complex.Pow(d, s);
+                Complex t2 = (d - s) / Complex.Pow(d, s);
                 lock (monitor_zeta)
                     zeta += t1 - t2;
                 return local++;
@@ -373,7 +371,7 @@ namespace DirichletSeries
             Zeta_Zeros(initial, step);
             //WriteLine("{0}", Zeta_Function(new Complex(0.5d, 14.134d)));
             */
-            
+
             for (t = initial; t < initial + step * 100.0d; t += step)
             {
                 Complex c = Dirichlet2(new Complex(0.5, t), TERMS);
@@ -400,7 +398,7 @@ namespace DirichletSeries
             Write("Press Enter: ");
             ReadLine();
             return;
-            
+
             while (Abs(step) > 1e-3)
             {
                 {
@@ -425,13 +423,14 @@ namespace DirichletSeries
                         lastSignMag = -signMag;
                         WriteLine("-------------------");
                     }
-                    else {
+                    else
+                    {
                         lastMag = magnitude;
                         t += step;
                     }
                 }
             }
-            
+
 
             Write("Press Enter: ");
             ReadLine();

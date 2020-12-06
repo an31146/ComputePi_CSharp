@@ -1,4 +1,4 @@
-﻿ //--------------------------------------------------------------------------
+﻿//--------------------------------------------------------------------------
 // 
 //  Copyright (c) Microsoft Corporation.  All rights reserved. 
 // 
@@ -57,10 +57,10 @@ namespace ComputePi
         static double SerialLinqPi()
         {
             double step = 1.0 / NUM_STEPS;
-            return 4.0d * 
+            return 4.0d *
                 (from i in Enumerable.Range(0, NUM_STEPS)
-                let x = (i + 0.5) * step
-                select 1.0 / (1.0 + x * x)).Sum() * step;
+                 let x = (i + 0.5) * step
+                 select 1.0 / (1.0 + x * x)).Sum() * step;
         }
 
         /// <summary>Estimates the value of PI using a PLINQ-based implementation.</summary>
@@ -68,8 +68,8 @@ namespace ComputePi
         {
             double step = 1.0 / NUM_STEPS;
             return 4.0d * (from i in ParallelEnumerable.Range(0, NUM_STEPS)
-                    let x = (i + 0.5) * step
-                    select 1.0 / (1.0 + x * x)).Sum() * step;
+                           let x = (i + 0.5) * step
+                           select 1.0 / (1.0 + x * x)).Sum() * step;
         }
 
         /// <summary>Estimates the value of PI using a for loop.</summary>

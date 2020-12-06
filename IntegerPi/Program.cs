@@ -213,8 +213,8 @@ namespace IntegerPi
                 return new Tuple<BigInteger, BigInteger>(BigInteger.One, b);
             BigInteger m = (a + b) >> 1;
             Tuple<BigInteger, BigInteger> p = BinarySplit(a, m);
-            Tuple< BigInteger, BigInteger> q = BinarySplit(m, b);
-            
+            Tuple<BigInteger, BigInteger> q = BinarySplit(m, b);
+
             return new Tuple<BigInteger, BigInteger>(p.Item1 * q.Item2 + q.Item1, p.Item2 * q.Item2);
         }
 
@@ -227,7 +227,7 @@ namespace IntegerPi
             Tuple<BigInteger, BigInteger> p = BinarySplit(0, N);
 
             //int len = Math.Max(p.Item1.ToString().Length, p.Item2.ToString().Length);
-            return (p.Item1 + p.Item2) * _ONE / p.Item2; 
+            return (p.Item1 + p.Item2) * _ONE / p.Item2;
         }
 
         public BigInteger LN2Fixed()
@@ -269,7 +269,7 @@ namespace IntegerPi
             BigInteger agm = BigIntAGM(_ONE, N1) << 1;
 
             BigInteger PI = BBPFixed();             // substitute with higher precision to calculate without halving m_DIGITS
-                //RamanujanFixed();
+                                                    //RamanujanFixed();
             PI *= _ONE;                             // compensate precision for division by agm
 
             BigInteger LogN = PI / agm;             // this division causes loss of precision by half ~{m_DIGITS/2)
@@ -339,7 +339,7 @@ namespace IntegerPi
                 //    break;
                 div = y;
                 iterations++;
-            } 
+            }
             sw.Stop();
 #if DEBUG
             string strElapsed;
@@ -355,13 +355,15 @@ namespace IntegerPi
 
         public BigInteger SquareRootFloor(BigInteger x)
         {
-            if (x.CompareTo(BigInteger.Zero) < 0) {
+            if (x.CompareTo(BigInteger.Zero) < 0)
+            {
                 throw new ArgumentException("Negative argument.");
             }
 
             // square roots of 0 and 1 are trivial and
             // y == 0 will cause a divide-by-zero exception
-            if (x.Equals(BigInteger.Zero) || x.Equals(BigInteger.One)) {
+            if (x.Equals(BigInteger.Zero) || x.Equals(BigInteger.One))
+            {
                 return x;
             }
 
@@ -392,13 +394,15 @@ namespace IntegerPi
 
         public BigInteger SquareRootCeil(BigInteger x)
         {
-            if (x.CompareTo(BigInteger.Zero) < 0) {
+            if (x.CompareTo(BigInteger.Zero) < 0)
+            {
                 throw new ArgumentException("Negative argument.");
             }
 
             // square roots of 0 and 1 are trivial and
             // y == 0 will cause a divide-by-zero exception
-            if (x == BigInteger.Zero || x == BigInteger.One) {
+            if (x == BigInteger.Zero || x == BigInteger.One)
+            {
                 return x;
             }
 
@@ -470,7 +474,7 @@ namespace IntegerPi
 
         public BigInteger SquareRootBakhshali(BigInteger S)
         {
-            BigInteger x = S >> 1; 
+            BigInteger x = S >> 1;
             int iterations = 0;
             Stopwatch sw = new Stopwatch();
 
@@ -485,7 +489,7 @@ namespace IntegerPi
                 a *= _ONE;
                 a = BigInteger.Divide(a, x << 1);
                 BigInteger b = x + a;
-                
+
                 BigInteger b2 = BigInteger.Divide(a * a, b << 1);
                 bBreak = b2.IsZero;
 
@@ -596,7 +600,7 @@ namespace IntegerPi
             }
             return e;
         }
-        
+
         public BigInteger Factorial(uint n)
         {
             BigInteger fact = 1;
@@ -741,8 +745,8 @@ namespace IntegerPi
                 return local;
             }, local => { lock (Monitor) sum += local; });
             */
-            sum =  (from i in Enumerable.Range(1, N)
-                    select 1.0 / i).Sum();
+            sum = (from i in Enumerable.Range(1, N)
+                   select 1.0 / i).Sum();
             sw.Stop();
 #if DEBUG
             string strElapsed;
@@ -864,7 +868,8 @@ namespace IntegerPi
                 sum += local;                       // sum = Ʃ (1 / i⁴) 
                 //Write("{0} \r", local.ToString("F18", CultureInfo.InvariantCulture));
                 return (local);
-            }, local => {
+            }, local =>
+            {
                 lock (monitor) { sum += local; }
             });
             return sum;
@@ -932,7 +937,8 @@ namespace IntegerPi
                 X.Item1 += i;
                 X.Item2 += unity / div;
                 return X.ToTuple();
-            }, t => {
+            }, t =>
+            {
                 lock (monitor)
                 {
                     sum += t.Item1;
@@ -971,8 +977,10 @@ namespace IntegerPi
                 term += unity / b;
                 //sum += term;
                 return term;
-            }, term => {
-                lock (monitor) { 
+            }, term =>
+            {
+                lock (monitor)
+                {
                     sum += term;
                 }
             });
@@ -1124,21 +1132,21 @@ namespace IntegerPi
 #endif
 #if HARMONIC
             //WriteLine("SlowHarmonicSeriesFixed({0}) {1}", pf.STEPS, pf.SlowHarmonicSeriesFixed(pf.STEPS));
-            WriteLine("HarmonicIdentities() {0}", pf.HarmonicIdentities());
+            WriteLine("HarmonicIdentities() {0}\n", pf.HarmonicIdentities());
 #if DEBUG
             var BigInt_pi_squared_over_twelve = pf.HarmonicIdentitiesFixed();
 #else
             var BigInt_pi_squared_over_twelve = pf.TimeThis("HarmonicIdentitiesFixed()", () => pf.HarmonicIdentitiesFixed());
 #endif
             WriteLine("HarmonicIdentitiesFixed() {0}", BigInt_pi_squared_over_twelve);
-            WriteLine("√(BigInt_pi_squared_over_twelve * 12):\n{0}", pf.Sqrt(BigInt_pi_squared_over_twelve * 12 * pf._ONE));
+            WriteLine("√(BigInt_pi_squared_over_twelve * 12):\n{0}\n", pf.Sqrt(BigInt_pi_squared_over_twelve * 12 * pf._ONE));
 #endif
 #if FACT
             WriteLine("Factorial({0}) = \n{1}\n", 100, pf.Factorial(100));
 #endif
 #if RAMANUJAN
             /*
-             * Timings are WITHOUT attaching the debugger AND breakpoints disabled!
+             * Timings taken WITHOUT attaching the debugger AND breakpoints disabled!
              * 12 terms accurate to 103 d.p.
              * 6 req. for default prec to 53 d.p.
              * 19728 digits ~69.5 s
@@ -1158,6 +1166,7 @@ namespace IntegerPi
             // 19728 digits ~2.2s for BBPFixed() v1 / ~1.2s for BBPFixed() v2
             // 39467 digits ~8.0s for BBPFixed() v1 / ~4.7s for BBPFixed() v2
             // 315655 digits ~582.6 s for BBPFixed() v1 / ~357.6 s for BBPFixed() v2
+            //                                          262137 iterations took: 412.6 s
             string strPI = pf.BBPFixed().ToString().Insert(1, ".");
             WriteLine("BBP series π:\n{0}\n\n", strPI);
 #endif
@@ -1171,6 +1180,7 @@ namespace IntegerPi
             WriteLine("BigInt_pi⁶/945: {0}\n\n⁶√(BigInt_pi⁶*945): {1}\n\n", BigIntZeta6, BigInt_pi);
 #endif
 #else
+// Release Build
 #if SQRT
             WriteLine("SquareRoot(pf.TWO.GetHashCode() = {0:x}) =\n{1}\n", pf.TWO.GetHashCode(), 
                                                     pf.TimeThis("SquareRoot(pf.TWO)", () => pf.SquareRoot(pf.TWO)));

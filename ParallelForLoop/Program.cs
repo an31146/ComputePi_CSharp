@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,7 +14,7 @@ namespace ParallelForLoop
 
         static void Main(string[] args)
         {
-            int[] nums = Enumerable.Range(A, B-A+1).ToArray();
+            int[] nums = Enumerable.Range(A, B - A + 1).ToArray();
             long total = 0;
             object lockObj = new object();
             Stopwatch sw = new Stopwatch();
