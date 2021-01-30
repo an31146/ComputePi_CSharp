@@ -223,6 +223,7 @@ namespace IntegerPi
         {
             uint digits = m_DIGITS;
             uint prec = (uint)(digits / Math.Log(10, 2));
+            Debug.WriteLine("prec: " + prec.ToString());
             int N = (int)(2.95 * digits / Math.Log(digits) + 35);
             Tuple<BigInteger, BigInteger> p = BinarySplit(0, N);
 
@@ -875,44 +876,10 @@ namespace IntegerPi
             return sum;
         }
 
-        private BigInteger normalize_old(uint n, uint digits)
-        {
-            BigInteger ret_val = new BigInteger(n);
-            BigInteger exponent = 100;
-
-            uint i = digits;
-            while (i > 0)
-            {
-                if ((i & 1) == 1)
-                    exponent *= 10;
-
-                exponent *= exponent;
-                i >>= 1;
-            }
-            ret_val *= exponent;
-
-            return ret_val;
-        }
-
         // 17/06/20 - new normalize function to make # of decimal places to {digits}
         private BigInteger normalize(uint n, uint digits)
         {
             return BigInteger.Pow(10, (int)digits * 2) * n;
-            //string str_n = n.ToString() + new String('0', (int)digits * 2);
-            //return BigInteger.Parse(str_n);               // expensive operation!
-        }
-
-        // return normalized argument A as the same as B
-        private BigInteger normalize(BigInteger A, BigInteger B)
-        {
-            int Log10_A = (int)BigInteger.Log10(A);
-            int Log10_B = (int)BigInteger.Log10(B);
-            int newlen = Math.Min(Log10_A, Log10_B);
-
-            if (Log10_A > newlen)
-                return A / BigInteger.Pow(10, Log10_A - newlen);
-            else
-                return A * BigInteger.Pow(10, Log10_B - Log10_A);
         }
 
         public BigInteger BigIntZeta(uint s)    // must be +ve integer > 1
