@@ -231,6 +231,18 @@ namespace IntegerPi
             return (p.Item1 + p.Item2) * _ONE / p.Item2;
         }
 
+        public BigInteger ExpSeries(int x)
+        {
+            BigInteger exp = _ONE;
+            for (int i = 1; i < STEPS; i++)
+            {
+                var term = _ONE * BigInteger.Pow(x, i) / BigInteger.Pow(10, i);
+                term /= Factorial((uint)i);
+                exp += term;
+            }
+            return exp;
+        }
+
         public BigInteger LN2Fixed()
         {
             //uint iterations = (uint)(m_DIGITS * 1.1); 
@@ -314,7 +326,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nSquareRoot() {iterations} iterations took: {strElapsed}\n");
+            Debug.WriteLine($"\nSquareRoot() {iterations} iterations took: {strElapsed}\n");
 #endif
             return quotient;
         }   // SquareRoot
@@ -337,7 +349,6 @@ namespace IntegerPi
                 y = BigInteger.Add(div, BigInteger.Divide(x, div));
                 y >>= 1;
                 bBreak = y.Equals(div);
-                //    break;
                 div = y;
                 iterations++;
             }
@@ -756,8 +767,8 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"Elapsed time: {strElapsed}");
-            WriteLine($"Sum of terms: {sum}\n");
+            Debug.WriteLine($"Elapsed time: {strElapsed}");
+            Write($"Sum of terms: {sum}\r");
 #endif
             return sum;
         }
@@ -788,6 +799,20 @@ namespace IntegerPi
             }
 
             return sum;
+        }
+
+        public void SlowConvergingPiSeries()
+        {
+            BigInteger sum = BigInteger.Zero;
+            for (int n = 1; n < (int)STEPS; n++)
+            {
+                var n1 = new BigInteger(n);
+                sum += _ONE / (n1 * n1);
+                var pi = sum * 6;
+                pi = SquareRoot(pi);
+                Write($"{pi.ToString().Substring(0,64)}\r");
+            }
+            WriteLine();
         }
 
         public double HarmonicIdentities()
@@ -891,7 +916,7 @@ namespace IntegerPi
             object monitor = new object();
             Stopwatch sw = new Stopwatch();
 
-            WriteLine("Calculating BigIntZeta({2}) with {0} iterations and {1} digits.", STEPS, DIGITS, s);
+            WriteLine("Calculating BigIntZeta({2}) with {0} iterations and {1} digits.\n", STEPS, DIGITS, s);
 
             sw.Start();
             Parallel.For<Tuple<double, BigInteger>>(2, (int)STEPS, () => new Tuple<double, BigInteger>(2.0d, 2), (i, loop, T) =>
@@ -920,7 +945,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            WriteLine($"\nBigIntZeta({s}):\n{zeta}\nElapsed time: {strElapsed}\n");
+            WriteLine($"\n\nBigIntZeta({s}):\n{zeta}\nElapsed time: {strElapsed}\n");
 #endif
             WriteLine();
             return zeta;
@@ -1080,6 +1105,7 @@ namespace IntegerPi
 #endif
 #if EXP || AGM
             WriteLine("ExpFixed =\n{0}\n", pf.ExpFixed());
+            WriteLine("ExpSeries({0}) =\n{1}\n", 5, pf.ExpSeries(5));
             WriteLine("LN2Fixed =\n{0}\n", pf.LN2Fixed());
 
             BigInteger sqrt2 = pf.Sqrt(pf.TWO);
@@ -1109,7 +1135,7 @@ namespace IntegerPi
             WriteLine("√(BigInt_pi_squared_over_twelve * 12):\n{0}\n", pf.Sqrt(BigInt_pi_squared_over_twelve * 12 * pf._ONE));
 #endif
 #if FACT
-            WriteLine("Factorial({0}) = \n{1}\n", 100, pf.Factorial(100));
+            WriteLine("Factorial({0}) = \n{1}\n", pf.STEPS, pf.Factorial(pf.STEPS));
 #endif
 #if RAMANUJAN
             /*
@@ -1140,11 +1166,13 @@ namespace IntegerPi
 #if ZETA
             BigInteger BigIntZeta4 = pf.BigIntZeta(4);
             BigInteger BigInt_pi = pf.NthRoot(BigIntZeta4 * 90, 4);
-            WriteLine("BigInt_pi⁴/6: {0}\n\n⁴√(BigInt_pi⁴*6): {1}\n\n", BigIntZeta4, BigInt_pi);
+            WriteLine("BigInt_pi⁴/90: {0}\n\n⁴√(BigInt_pi⁴*90): {1}\n\n", BigIntZeta4, BigInt_pi);
 
             BigInteger BigIntZeta6= pf.BigIntZeta(6);
             BigInt_pi = pf.NthRoot(BigIntZeta6 * 945, 6);
             WriteLine("BigInt_pi⁶/945: {0}\n\n⁶√(BigInt_pi⁶*945): {1}\n\n", BigIntZeta6, BigInt_pi);
+
+            //pf.SlowConvergingPiSeries();
 #endif
 #else
 // Release Build
