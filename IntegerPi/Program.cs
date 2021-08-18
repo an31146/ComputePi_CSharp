@@ -245,7 +245,7 @@ namespace IntegerPi
 
         public BigInteger LN2Fixed()
         {
-            //uint iterations = (uint)(m_DIGITS * 1.1); 
+            // https://en.wikipedia.org/wiki/Natural_logarithm_of_2#BBP-type_representations
             BigInteger one_third = _ONE / 3;
             BigInteger sum = one_third, term = sum;
 
@@ -253,8 +253,8 @@ namespace IntegerPi
             {
                 one_third /= 9;
                 term = one_third / (2 * n + 1);
-                if (term.IsZero)
-                    break;
+                //if (term.IsZero)
+                //    break;
                 sum += term;
             }
             //sum = normalize(sum, _ONE / 10);         // truncate last few digits due to rounding
@@ -285,7 +285,7 @@ namespace IntegerPi
                                                     //RamanujanFixed();
             PI *= _ONE;                             // compensate precision for division by agm
 
-            BigInteger LogN = PI / agm;             // this division causes loss of precision by half ~{m_DIGITS/2)
+            BigInteger LogN = PI / agm;             // this division causes loss of precision by half ~(m_DIGITS/2)
             BigInteger ln2 = LN2Fixed() * N;
             LogN -= ln2;
             LogN /= BigInteger.Pow(10, (int)m_DIGITS >> 1);    // truncate trailing ? digits due to rounding error
@@ -307,15 +307,9 @@ namespace IntegerPi
             {
                 quotient = n / div + div;
                 _div = div;                                     // preserve div for comparison later
-                //_doubleOfQuotient = quotient;                 // _doubleOfquotient;       preserve double of quotient before halving
                 quotient >>= 1;                                 // right-shift quotient;
                 div = quotient;                                 // assign next divisor
                 bBreakExpr = _div > quotient;                   // test if _div is still greater than the quotient - this is how to do it!
-
-                //bBreakExpr = quotient * quotient > n;           // Can't figure out a test expression without using multiplication here :-(
-                //bBreakExpr = quotient < _div;
-                //_remainder = _doubleOfQuotient - div - div;     // 
-                //bBreakExpr = quotient.Equals(div) || quotient.Equals(_doubleOfQuotient);
                 iterations++;
             } while (bBreakExpr);
             sw.Stop();
@@ -326,7 +320,7 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            Debug.WriteLine($"\nSquareRoot() {iterations} iterations took: {strElapsed}\n");
+            WriteLine($"\nSquareRoot() {iterations} iterations took: {strElapsed}\n");
 #endif
             return quotient;
         }   // SquareRoot
@@ -1164,12 +1158,13 @@ namespace IntegerPi
             WriteLine("BBP series π:\n{0}\n\n", strPI);
 #endif
 #if ZETA
+            // https://en.wikipedia.org/wiki/Ap%C3%A9ry%27s_theorem#History
             BigInteger BigIntZeta4 = pf.BigIntZeta(4);
-            BigInteger BigInt_pi = pf.NthRoot(BigIntZeta4 * 90, 4);
+            BigInteger BigInt_pi = pf.NthRoot(BigIntZeta4 * 90, 4);     // 1440 / 16 = 90
             WriteLine("BigInt_pi⁴/90: {0}\n\n⁴√(BigInt_pi⁴*90): {1}\n\n", BigIntZeta4, BigInt_pi);
 
             BigInteger BigIntZeta6= pf.BigIntZeta(6);
-            BigInt_pi = pf.NthRoot(BigIntZeta6 * 945, 6);
+            BigInt_pi = pf.NthRoot(BigIntZeta6 * 945, 6);       // 60480 / 64 = 945
             WriteLine("BigInt_pi⁶/945: {0}\n\n⁶√(BigInt_pi⁶*945): {1}\n\n", BigIntZeta6, BigInt_pi);
 
             //pf.SlowConvergingPiSeries();
