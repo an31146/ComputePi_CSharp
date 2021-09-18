@@ -219,7 +219,7 @@ namespace IntegerPi
         }
 
         // following adapted from https://bit.ly/3hC5fTr
-        public BigInteger ExpFixed()
+        public string ExpFixed()
         {
             uint digits = m_DIGITS;
             uint prec = (uint)(digits / Math.Log(10, 2));
@@ -227,11 +227,11 @@ namespace IntegerPi
             int N = (int)(2.95 * digits / Math.Log(digits) + 35);
             Tuple<BigInteger, BigInteger> p = BinarySplit(0, N);
 
-            //int len = Math.Max(p.Item1.ToString().Length, p.Item2.ToString().Length);
-            return (p.Item1 + p.Item2) * _ONE / p.Item2;
+            var e = (p.Item1 + p.Item2) * _ONE / p.Item2;
+            return e.ToString().Insert(1, ".");
         }
 
-        public BigInteger ExpSeries(int x)
+        public string ExpSeries(int x)
         {
             BigInteger exp = _ONE;
             for (int i = 1; i < STEPS; i++)
@@ -240,7 +240,7 @@ namespace IntegerPi
                 term /= Factorial((uint)i);
                 exp += term;
             }
-            return exp;
+            return exp.ToString().Insert(1, ".");
         }
 
         public BigInteger LN2Fixed()
@@ -253,12 +253,9 @@ namespace IntegerPi
             {
                 one_third /= 9;
                 term = one_third / (2 * n + 1);
-                //if (term.IsZero)
-                //    break;
                 sum += term;
             }
-            //sum = normalize(sum, _ONE / 10);         // truncate last few digits due to rounding
-            return (sum << 1);                       // multiply by 2
+            return (sum << 1);   // multiply by 2
         }
 
         // Assumes parameters are already normalized fixed-point to {m_DIGITS} places
@@ -609,14 +606,15 @@ namespace IntegerPi
 
         public BigInteger Factorial(uint n)
         {
-            BigInteger fact = 1;
-            Stopwatch sw = new Stopwatch();
-
-            sw.Start();
             if (n <= 1)
                 return 1;
-            for (uint i = 2; i <= n; i++)
-                fact *= i;
+
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
+            BigInteger factorial;
+            (_, factorial) = BinarySplit(1, n);
+
             sw.Stop();
 #if DEBUG
             string strElapsed;
@@ -625,9 +623,9 @@ namespace IntegerPi
             else
                 strElapsed = String.Format("{0:F1} s", sw.Elapsed.TotalSeconds);
 
-            //WriteLine($"\nFactorial({n}):\n{factorial}\nElapsed time: {strElapsed}\n");
+            //WriteLine($"Elapsed time: {strElapsed}\n");
 #endif
-            return fact;
+            return factorial;
         }
 
         public BigInteger RamanujanFixed()
@@ -1099,13 +1097,13 @@ namespace IntegerPi
 #endif
 #if EXP || AGM
             WriteLine("ExpFixed =\n{0}\n", pf.ExpFixed());
-            WriteLine("ExpSeries({0}) =\n{1}\n", 5, pf.ExpSeries(5));
-            WriteLine("LN2Fixed =\n{0}\n", pf.LN2Fixed());
+            WriteLine("ExpSeries(0.{0}) =\n{1}\n", 5, pf.ExpSeries(5));
+            WriteLine("LN2Fixed =\n0.{0}\n", pf.LN2Fixed());
 
-            BigInteger sqrt2 = pf.Sqrt(pf.TWO);
-            BigInteger biAGM = pf.BigIntAGM(pf._ONE, sqrt2);
-            WriteLine("BigIntAGM(1, √2) =\n{0}\n", biAGM);
-            WriteLine("Gauss's constant =\n{0}\n", pf.ONE / biAGM);
+            var sqrt2 = pf.Sqrt(pf.TWO);
+            var biAGM = pf.BigIntAGM(pf._ONE, sqrt2);
+            WriteLine("BigIntAGM(1, √2) =\n{0}\n", biAGM.ToString().Insert(1, "."));
+            WriteLine("Gauss's constant =\n0.{0}\n", pf.ONE / biAGM);
 #endif
 
 #if LN
