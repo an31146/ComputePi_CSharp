@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -9,42 +10,58 @@ namespace DirichletSeries
 {
     static class Program
     {
-        static private uint[] primes;
+        static private ulong[] primes;
 
-        static void prime_sieve(uint n)
+        static void prime_sieve(ulong n)
         {
-            uint p;
+            int p;
             primes.Initialize();
 
             primes[0] = 2;
             for (p = 0; primes[p] < n;)
             {
-                for (uint i = primes[p] * primes[p]; i < n; i += primes[p])
+                for (ulong i = primes[p] * primes[p]; i < n; i += primes[p])
                     primes[i] = 1;
                 primes[++p] = primes[p - 1] + 1;
                 for (; primes[p] < n && primes[primes[p]] == 1; primes[p]++) ;     //find next prime (where s[p]==0)
             }
-            Array.Resize(ref primes, (int)p);
+            Array.Resize(ref primes, p);
         }
 
         static void more_primes(uint n)
         {
             Random r = new Random();
+            List<ulong> mp = primes.ToList();
 
-            for (uint p = primes[primes.Length - 1] + 2; p < n; p += 2)
+            for (ulong p = primes.Last() + 2; p < n; p += 2)
             {
                 if (p % 5 == 0)
-                    p += 2;
+                    continue;
 
-                bool isPrime = BigInteger.ModPow(r.Next((int)p), p - 1, p) == 1;
+                bool isPrimeX = BigInteger.ModPow(2, p - 1, p).IsOne;
 
-                if (isPrime)
+                if (isPrimeX)
                 {
-                    Array.Resize(ref primes, primes.Length + 1);
-                    primes[primes.Length - 1] = p;
-                    Write($"{p}\r");
+                    bool next_p = false;
+                    foreach (var px in primes)
+                        if (p % px == 0)
+                        {
+                            next_p = true;
+                            break;
+                            //Write($"{p}: ");
+                            //ReadLine();
+                        }
+                        else if (px * px > p)
+                            break;
+
+                    if (next_p)
+                        continue;
+                    mp.Add(p);
+                    //Write($"{p}\r");
                 }
             }
+            primes = mp.ToArray(); 
+            //Array.Resize(ref primes, primes.Length + 1);
             WriteLine($"\n\nprimes.Length: {primes.Length}\n");
         }
 
@@ -352,7 +369,7 @@ namespace DirichletSeries
             //for (int terms = 100000; terms <= 1000000000; terms *= 10)
             //    WriteLine("{0}", CalcZetaZero(14.134725141734, terms));
 
-            const int TERMS = 1000000;      // 525000;    // 100000000;
+            const int TERMS = 10000000;      // 525000;    // 100000000;
             const double initial = 14.1d;
             double step = 0.01d;
             double lastMag = 0.5d;
@@ -360,17 +377,23 @@ namespace DirichletSeries
             int lastSignMag = Sign(CalcZetaZero(initial, TERMS).Magnitude);
             double t = initial;
 
-            /*
-            primes = new uint[TERMS];
+            
+            primes = new ulong[TERMS];
             prime_sieve(TERMS);
+            WriteLine($"primes.Last(): {primes.Last()}");
             //foreach (int p in primes)
             //    Write("{0,8}", p);
-            more_primes(6000000);
-            WriteLine($"{primes.Length}");
+            //more_primes(20000000);
+            //WriteLine($"{primes.Length}");
             
-            Zeta_Zeros(initial, step);
-            //WriteLine("{0}", Zeta_Function(new Complex(0.5d, 14.134d)));
-            */
+            //Zeta_Zeros(initial, step);
+            //WriteLine("{0}", Zeta_Function(new Complex(0.5d, 14.134725d)));
+            WriteLine("{0}", CalcZetaZero(14.134725d, 100000000));
+            WriteLine("{0}", CalcZetaZero(21.02203963877155d, 100000000));
+
+            Write("Press Enter: ");
+            ReadLine();
+
 
             for (t = initial; t < initial + step * 100.0d; t += step)
             {
