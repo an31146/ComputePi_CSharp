@@ -366,9 +366,6 @@ namespace DirichletSeries
 
         static void Main(string[] args)
         {
-            //for (int terms = 100000; terms <= 1000000000; terms *= 10)
-            //    WriteLine("{0}", CalcZetaZero(14.134725141734, terms));
-
             const int TERMS = 10000000;      // 525000;    // 100000000;
             const double initial = 14.1d;
             double step = 0.01d;
@@ -385,10 +382,12 @@ namespace DirichletSeries
             //    Write("{0,8}", p);
             //more_primes(20000000);
             //WriteLine($"{primes.Length}");
-            
+
             //Zeta_Zeros(initial, step);
             //WriteLine("{0}", Zeta_Function(new Complex(0.5d, 14.134725d)));
-            WriteLine("{0}", CalcZetaZero(14.134725d, 100000000));
+            for (int terms = 100000; terms <= TERMS; terms *= 10)
+                WriteLine("{0}", CalcZetaZero(14.134725141734, terms));
+
             WriteLine("{0}", CalcZetaZero(21.02203963877155d, 100000000));
 
             Write("Press Enter: ");
