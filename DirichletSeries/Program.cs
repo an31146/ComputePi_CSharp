@@ -102,8 +102,11 @@ namespace DirichletSeries
                 return y;
         }
 
-        // Stirling's formula for the gamma function
-        // https://en.wikipedia.org/wiki/Stirling%27s_approximation#Versions_suitable_for_calculators
+        /// <summary>
+        /// Stirling's formula for the gamma function
+        /// https://en.wikipedia.org/wiki/Stirling%27s_approximation#Versions_suitable_for_calculators
+        /// </summary>
+        /// <param name="z">complex number z</param>
         static Complex loggamma(Complex z)
         {
             Complex log_z, z_sinh_z, z_pow6;
@@ -134,12 +137,9 @@ namespace DirichletSeries
         static double rsiegelz(double t, int n)
         {
             double ZZ = 0.0;
-            double R = 0.0;
-            double j = 1.0;
-            int k = 0;
             int N = (int)Floor(Sqrt(t * 0.5 / PI));
-            double p = Sqrt(t * 0.5 / PI) - N;
 
+            double j = 1.0;
             while (j <= N)
             {
                 ZZ = ZZ + 1.0 / Sqrt(j) * Cos((rsiegeltheta(t).Real - t * Log(j)) % (2.0 * PI));
@@ -147,9 +147,12 @@ namespace DirichletSeries
             }
             ZZ = 2.0 * ZZ;
 
+            int k = 0;
+            double R = 0.0;
+            double p = Sqrt(t * 0.5 / PI) - N;
             while (k <= n)
             {
-                R = R + C(2.0 * p - 1.0, k) * Pow(2.0 * PI / t, (double)k * 0.5);
+                R = R + C(2.0 * p - 1.0, k) * Pow(2.0 * PI / t, k * 0.5);
                 ++k;
             }
             R = Pow(2.0 * PI / t, 0.25) * R;
@@ -294,7 +297,6 @@ namespace DirichletSeries
         /// <param name="t">imaginary part of s. The first zero is at 14.134725</param>
         /// <param name="numberOfTerms">Use a higher number to find more accurate convergence.</param>
         /// <returns></returns>
-        /// 
         static Complex CalcZetaZero(this double t, int numberOfTerms)
         {
             var range = Enumerable.Range(1, numberOfTerms);
@@ -306,7 +308,8 @@ namespace DirichletSeries
             foreach (int n in range)
             {
                 var direction = n % 2 == 0 ? PI : 0;
-                var newTerm = Complex.Exp(new Complex(-Log(n) * 0.5d, -Log(n) * t + direction));
+                var log_n = Log(n);
+                var newTerm = Complex.Exp(new Complex(-log_n * 0.5d, -log_n * t + direction));
                 lock (monitor_zeta)
                     zetaZero += newTerm;
                 //return local++;
@@ -316,6 +319,11 @@ namespace DirichletSeries
             return zetaZero;
         }
 
+        /// <summary>
+        /// Naive product formula
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns>zeta of s</returns>
         static Complex Zeta_Function(Complex s)
         {
             Complex product = 1.0d;
@@ -346,15 +354,15 @@ namespace DirichletSeries
             object monitor = new object();
 
             //for (int n = 1; n < terms; n++)
-            Parallel.ForEach(range, () => 0.0, (n, state, local) =>
-            {
-                double d = (double)n;
-                Complex t1 = d / Complex.Pow(d + 1.0, s);
-                Complex t2 = (d - s) / Complex.Pow(d, s);
-                lock (monitor_zeta)
-                    zeta += t1 - t2;
-                return local++;
-            }, local => { lock (monitor) sum += local; });
+            _ = Parallel.ForEach(range, () => 0.0, (n, state, local) =>
+              {
+                  double d = n;
+                  Complex t1 = d / Complex.Pow(d + 1.0, s);
+                  Complex t2 = (d - s) / Complex.Pow(d, s);
+                  lock (monitor_zeta)
+                      zeta += t1 - t2;
+                  return local++;
+              }, local => { lock (monitor) sum += local; });
             zeta /= (s - 1.0);
             return zeta;
 
@@ -366,9 +374,9 @@ namespace DirichletSeries
 
         static void Main(string[] args)
         {
-            const int TERMS = 10000000;      // 525000;    // 100000000;
-            const double initial = 14.1d;
-            double step = 0.01d;
+            const int TERMS = 10000000;      // 525000;
+            const double initial = 21.0d;
+            double step = 0.1d;
             double lastMag = 0.5d;
             int lastSign = Sign(CalcZetaZero(initial, TERMS).Phase);
             int lastSignMag = Sign(CalcZetaZero(initial, TERMS).Magnitude);
@@ -386,23 +394,27 @@ namespace DirichletSeries
             //Zeta_Zeros(initial, step);
             //WriteLine("{0}", Zeta_Function(new Complex(0.5d, 14.134725d)));
             for (int terms = 100000; terms <= TERMS; terms *= 10)
-                WriteLine("{0}", CalcZetaZero(14.134725141734, terms));
+                WriteLine("[{1,8}]: {0}", CalcZetaZero(14.134725141734, terms), terms);
 
-            WriteLine("{0}", CalcZetaZero(21.02203963877155d, 100000000));
+            WriteLine("rsiegelz: {0}", rsiegelz(21.0, TERMS)); 
+            WriteLine("CalcZetaZero: {0}", CalcZetaZero(21.02203963877155d, TERMS));
 
             Write("Press Enter: ");
             ReadLine();
 
 
-            for (t = initial; t < initial + step * 100.0d; t += step)
+            var a = initial;
+            var b = a + step;
+            while (b - a > 1e-6)
             {
-                Complex c = Dirichlet2(new Complex(0.5, t), TERMS);
-                double magnitude = c.Magnitude;
-                double phase = c.Phase;
-                int sign = Sign(lastMag - magnitude);
-                double z = Sin(Complex.Abs(rsiegeltheta(t))) * rsiegelz(t, 4);
-                WriteLine("{0:0.0000000000} : {1}\t{2}\t{3}\t{4}", t, sign, magnitude, phase, z);
-                lastMag = magnitude;
+                var c = (a + b) / 2.0;
+                double z = rsiegelz(c, TERMS);
+                int sign = Sign(z);
+                WriteLine("{0:0.0000000000} : {1}\t{2}", c, sign, z);
+                if (sign == Sign(rsiegelz(a, TERMS)))
+                    a = c;
+                else
+                    b = c;
             }
             /*
             //WriteLine("{0}", Dirichlet2(new Complex(0.5, 14.134725d), TERMS));
